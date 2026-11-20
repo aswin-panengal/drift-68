@@ -1,0 +1,34 @@
+# Dependencies, build output, and test artifacts
+node_modules/
+/dist/
+/.vscode-test/
+/.vscode-test-web/
+/test-results/
+/playwright-report/
+/coverage/
+*.tsbuildinfo
+*.vsix
+/drift-break-web.zip
+*.log
+
+# Local tooling and agent state
+/.agents/
+/.claude/
+/.codex/
+/.cursor/
+/.github/skills/
+/.impeccable/
+/skills/
+/.venv/
+__pycache__/
+/.pytest_cache/
+/.vscode/*
+!/.vscode/launch.json
+!/.vscode/tasks.json
+
+# Local configuration and OS metadata
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
