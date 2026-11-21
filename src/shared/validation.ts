@@ -1,4 +1,5 @@
-import { CAMERA_NAMES, CAR_IDS, TRACK_IDS, DEFAULT_SAVE, type SaveData, type Settings, type Snapshot, type ClientMessage, type RecordEntry } from './types';
+import { CAMERA_NAMES, CAR_IDS, TRACK_IDS, LAP_COUNTS, DEFAULT_SAVE, type SaveData, type Settings, type Snapshot, type ClientMessage, type RecordEntry } from './types';
+import { ROOM_CODE, ROOM_TOKEN, roomCar, type MultiplayerResume } from './multiplayer';
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const n = (v: unknown, min: number, max: number): v is number => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
 const one = (v: unknown, values: readonly unknown[]): boolean => values.includes(v);
@@ -16,17 +17,26 @@ export function recoverSave(v: unknown): SaveData {
   return validSave(v) ? structuredClone(v) : structuredClone(DEFAULT_SAVE);
 }
 export function validSnapshot(s: unknown): s is Snapshot {
-  if (!object(s) || s.version !== 1 || !one(s.car,CAR_IDS) || !one(s.track,TRACK_IDS) || typeof s.zen !== 'boolean' || !one(s.screen,['title','garage','circuits','drive','pause','settings','results']) || !validSettings(s.settings)) return false;
+  if (!object(s) || s.version !== 1 || !one(s.car,CAR_IDS) || !one(s.track,TRACK_IDS) || typeof s.zen !== 'boolean' || !one(s.screen,['title','modes','licenses','garage','circuits','drive','pause','settings','results']) || !validSettings(s.settings)) return false;
   const v = s.vehicle, score = s.score, lap = s.lap;
   return object(v) && ['x','z'].every(k=>n(v[k],-2000,2000)) && ['vx','vz','speed','lateral'].every(k=>n(v[k],-200,200)) && n(v.heading,-1e5,1e5) && n(v.yawRate,-20,20) && n(v.steering,-2,2) && n(v.driftAngle,-Math.PI,Math.PI) && n(v.boost,0,1) && typeof v.handbrake === 'boolean' && n(v.throttle,0,1) && n(v.brake,0,1)
     && object(score) && ['banked','pending'].every(k=>n(score[k],0,1e9)) && n(score.multiplier,1,5) && n(score.bestMultiplier,1,5) && ['grace','driftTime','longest','travel','progress'].every(k=>n(score[k],0,1e7)) && ['anchorX','anchorZ'].every(k=>n(score[k],-2000,2000)) && typeof score.active === 'boolean'
-    && object(lap) && n(lap.next,1,12) && Number.isInteger(lap.next) && n(lap.checkpoint,0,11) && Number.isInteger(lap.checkpoint) && n(lap.elapsed,0,1e7) && typeof lap.finished === 'boolean';
+    && object(lap) && n(lap.next,1,12) && Number.isInteger(lap.next) && n(lap.checkpoint,0,11) && Number.isInteger(lap.checkpoint) && n(lap.elapsed,0,1e7) && typeof lap.finished === 'boolean'
+    && ((lap.total === undefined && lap.completed === undefined) || (one(lap.total,LAP_COUNTS) && n(lap.completed,0,Number(lap.total)) && Number.isInteger(lap.completed) && lap.finished === (lap.completed === lap.total)));
+}
+function validRoomResume(value: unknown): value is MultiplayerResume {
+  if (!object(value) || !object(value.identity)) return false;
+  const { code, token, car } = value.identity;
+  return typeof code === 'string' && ROOM_CODE.test(code) && typeof token === 'string' && ROOM_TOKEN.test(token) && roomCar(car) &&
+    (value.race === undefined || (validSnapshot(value.race) && value.race.car === car && !value.race.zen &&
+      ['drive','pause','results'].includes(value.race.screen)));
 }
 export function parseClientMessage(v: unknown): ClientMessage | undefined {
   if (!object(v) || typeof v.type !== 'string') return;
   if (['ready','claim','openEditor','openSidebar','maximize','resetRecords'].includes(v.type)) return {type:v.type} as ClientMessage;
   if (v.type === 'initialized' && n(v.token,0,1e9)) return {type:'initialized',token:v.token};
   if ((v.type === 'snapshot' || v.type === 'suspended') && n(v.token,0,1e9) && validSnapshot(v.snapshot)) return {type:v.type,token:v.token,snapshot:v.snapshot};
+  if (v.type === 'roomSnapshot' && n(v.token,0,1e9) && (v.room === undefined || validRoomResume(v.room))) return {type:'roomSnapshot',token:v.token,room:v.room};
   if(v.type === 'save' && validSave(v.data)) return {type:'save',data:v.data};
   if(v.type === 'record' && one(v.track,TRACK_IDS) && one(v.car,CAR_IDS) && validEntry(v.entry)) return v as unknown as ClientMessage;
 }

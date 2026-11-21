@@ -1,15 +1,20 @@
 # Dependencies, build output, and test artifacts
 node_modules/
 /dist/
+/release/
 /.vscode-test/
 /.vscode-test-web/
-/test-results/
+test-results/
 /playwright-report/
 /coverage/
 *.tsbuildinfo
 *.vsix
 /drift-break-web.zip
+/drift-68-web*.zip
 *.log
+/.wrangler/
+/server/.wrangler/
+/server/worker-configuration.d.ts
 
 # Local tooling and agent state
 /.agents/
@@ -30,5 +35,13 @@ __pycache__/
 .env
 .env.*
 !.env.example
+.dev.vars
+.dev.vars.*
 .DS_Store
 Thumbs.db
+*.pem
+*.key
+/.npmrc.local
+
+# Historical review kept local
+/docs/LEGAL_AND_ORIGINALITY_AUDIT.md

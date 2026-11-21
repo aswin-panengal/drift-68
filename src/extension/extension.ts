@@ -27,13 +27,14 @@ export function activate(context:vscode.ExtensionContext) {
       }else if(m.type==='claim'){await sessions.request(id);}
       else if(m.type==='initialized')sessions.initialized(id,m.token);
       else if(m.type==='snapshot'||m.type==='suspended')sessions.capture(id,m.token,m.snapshot,m.type==='suspended');
+      else if(m.type==='roomSnapshot')sessions.captureRoom(id,m.token,m.room);
       else if(m.type==='openEditor')panels.open();
       else if(m.type==='openSidebar'){await vscode.commands.executeCommand('driftBreak.sidebar.focus');await sessions.request('sidebar');}
       else if(m.type==='maximize')await vscode.commands.executeCommand('driftBreak.maximize');
-      else if(m.type==='save'){await persistence.save(m.data);sessions.broadcast(persistence.data);}
-      else if(m.type==='record'&&sessions.activeId===id){await persistence.record(m.track,m.car,m.entry);sessions.broadcast(persistence.data);}
-      else if(m.type==='resetRecords'){
-        const answer=await vscode.window.showWarningMessage('Reset all Drift Break personal bests? This cannot be undone.',{modal:true},'Reset records');
+      else if(m.type==='save'&&sessions.readyId===id){await persistence.save(m.data);sessions.broadcast(persistence.data);}
+      else if(m.type==='record'&&sessions.readyId===id){await persistence.record(m.track,m.car,m.entry);sessions.broadcast(persistence.data);}
+      else if(m.type==='resetRecords'&&sessions.readyId===id){
+        const answer=await vscode.window.showWarningMessage('Reset all Drift 68 personal bests? This cannot be undone.',{modal:true},'Reset records');
         if(answer==='Reset records'){await persistence.reset();sessions.broadcast(persistence.data);}
       }
     });

@@ -17,7 +17,7 @@ with sync_playwright() as p:
             except psutil.Error:pass
         return {'rss':sum(r['rss'] for r in rows),'private':sum(r['private'] for r in rows),'processes':rows}
     page.goto('http://127.0.0.1:5173');page.wait_for_load_state('networkidle');out['idleMemory']=memory()
-    page.get_by_role('button',name='Open Drift Break',exact=True).click();page.get_by_role('button',name='Start Drive',exact=True).click();page.get_by_role('button',name='Choose circuit',exact=True).click();page.get_by_role('button',name='Head to the start',exact=True).click()
+    page.get_by_role('button',name='Play',exact=True).click();page.get_by_role('button',name='Solo',exact=True).click();page.get_by_role('button',name='Head to the start',exact=True).click()
     out['gpu']=page.evaluate('''()=>{const gl=window.__drift.renderer.renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');return {renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unavailable',vendor:ext?gl.getParameter(ext.UNMASKED_VENDOR_WEBGL):'unavailable'};}''')
     for label,mode,w,h,quality in [('sidebar','sidebar',300,600,'auto'),('editor','editor',1200,800,'auto'),('maximized','maximized',1600,1000,'auto'),('editorLow','editor',1200,800,'low')]:
         page.evaluate('window.__drift.pause()');page.set_viewport_size({'width':w,'height':h})

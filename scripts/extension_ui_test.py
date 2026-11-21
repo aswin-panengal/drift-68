@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -22,6 +23,7 @@ REQUIRED_FILES = {
     "extension/dist/extension.cjs", "extension/dist/webview/index.html",
     "extension/dist/webview/game.js", "extension/dist/webview/index.css",
     "extension/dist/webview/Outfit.woff2", "extension/dist/webview/OFL-Outfit.txt",
+    "extension/dist/webview/drift-cover.webp",
 }
 
 REPLAY_GAMEPAD = """(inputs) => {
@@ -157,7 +159,9 @@ class Workbench:
         game = self.game("sidebar")
         if game.locator('[data-screen="idle"]').is_visible():
             expect(game.locator("canvas")).to_have_count(0)
-            button(game, "Open Drift Break").click()
+            button(game, "Play").click()
+        elif screen == "modes" and game.locator('[data-screen="title"]').is_visible():
+            button(game, "Play").click()
         return self.game("sidebar", screen)
 
     def assert_one_canvas(self):
@@ -171,36 +175,60 @@ class Workbench:
 
     def back_to_title(self, game):
         button(game, "Back").click()
-        expect(game.locator('[data-screen="garage"]')).to_be_visible()
+        expect(game.locator('[data-screen="modes"]')).to_be_visible()
         button(game, "Back").click()
         expect(game.locator('[data-screen="title"]')).to_be_visible()
 
+    def open_setup_from_title(self, game):
+        button(game, "Play").click()
+        button(game, "Solo").click()
+
+    def pick_setup(self, game, key, value):
+        selection = game.locator(f"[data-selection={key}]")
+        label = "car" if key == "car" else "circuit"
+        for _ in range(4):
+            if selection.get_attribute("data-selected") == value:
+                break
+            button(game, f"Next {label}").click()
+        expect(selection).to_have_attribute("data-selected", value)
+
     def verify(self, replay):
-        self.command("Drift Break: Open in Explorer")
-        sidebar = self.open_sidebar("title")
-        button(sidebar, "Start Drive").click()
-        sidebar.locator(f'[data-car="{replay["car"]}"]').click()
-        button(sidebar, "Choose circuit").click()
+        self.command("Drift 68: Open in Explorer")
+        sidebar = self.open_sidebar("modes")
+        button(sidebar, "Solo").click()
+        self.pick_setup(sidebar, "car", replay["car"])
+        self.pick_setup(sidebar, "track", replay["track"])
         self.back_to_title(sidebar)
         self.passed("The default Explorer height allows opening the game and selecting a car and circuit")
 
-        self.command("Drift Break: Open in Editor")
+        self.command("Drift 68: Open in Editor")
         game = self.game(screen="title")
-        expect(game.locator("#scene canvas")).to_have_count(1)
+        expect(game.locator("#scene canvas")).to_have_count(0)
         assert game.evaluate('async () => (await document.fonts.load("400 20px Outfit")).some(font => font.status === "loaded")')
         assert "default-src 'none'" in game.locator('meta[http-equiv="Content-Security-Policy"]').get_attribute("content")
         self.passed("Installed Webview starts with local game assets, font and CSP")
 
-        button(game, "Start Drive").click()
-        game.locator(f'[data-car="{replay["car"]}"]').click()
-        button(game, "Choose circuit").click()
-        game.locator(f'[data-track="{replay["track"]}"]').click()
+        button(game, "Play").click()
+        expect(game.locator("#scene canvas")).to_have_count(0)
+        button(game, "Solo").click()
+        self.pick_setup(game, "car", replay["car"])
+        self.pick_setup(game, "track", replay["track"])
         button(game, "Head to the start").click()
         expect(game.locator("#focus-hint")).to_be_visible()
         game.locator("#scene").click()
         for _ in range(3):
-            self.page.keyboard.press("c")
+            self.page.keyboard.press("v")
         expect(game.get_by_role("status")).to_have_text("Rear chase camera")
+        self.page.keyboard.press("n")
+        expect(game.locator(".minimap")).to_be_hidden()
+        self.page.keyboard.press("n")
+        self.page.keyboard.press("h")
+        expect(game.locator("#lap-time")).to_be_hidden()
+        self.page.keyboard.press("h")
+        self.page.keyboard.press("m")
+        expect(game.get_by_role("status")).to_have_text("Sound on")
+        self.page.keyboard.press("m")
+        expect(game.get_by_role("status")).to_have_text("Sound off")
         self.page.keyboard.down("w")
         expect(game.locator("#speed")).to_have_text(re.compile(r"^[1-9]\d+$"), timeout=20_000)
         self.page.keyboard.up("w")
@@ -208,15 +236,19 @@ class Workbench:
         self.passed("Focused workbench dispatches camera and acceleration keys")
 
         self.page.keyboard.press(f"{self.modifier}+n")
-        source = "wasd r c stay in the source editor"
+        source = "wasd r v m n h stay in the source editor"
         self.page.wait_for_function("document.activeElement?.closest('.monaco-editor') !== null")
         self.page.keyboard.type(source, delay=15)
         lines = self.page.locator(".editor-instance .view-lines").last
         expect(lines).to_contain_text(source.replace(" ", "\u00a0"))
         self.page.keyboard.press(f"{self.modifier}+z")
         expect(lines).not_to_contain_text(source.replace(" ", "\u00a0"))
-        self.command("Drift Break: Open in Editor")
+        self.command("Drift 68: Open in Editor")
         game = self.game(screen="pause")
+        shortcuts = game.locator(".pause-shortcuts")
+        shortcuts.get_by_text("Keyboard shortcuts", exact=True).click()
+        expect(shortcuts.locator("dd")).to_have_count(12)
+        shortcuts.get_by_text("Keyboard shortcuts", exact=True).click()
         speed = game.locator("#speed").inner_text()
         self.page.keyboard.type("wwww")
         expect(game.locator("#speed")).to_have_text(speed)
@@ -259,15 +291,15 @@ class Workbench:
         self.page.screenshot(path=str(self.output / "lap-results.png"))
         self.passed("A continuous lap through the standard gamepad input path reaches real results")
 
-        button(game, "Change Circuit").click()
-        expect(game.locator(f'[data-track="{replay["track"]}"]')).to_contain_text("Personal best")
+        button(game, "Change car or circuit").click()
+        expect(game.locator("[data-selection=track]")).to_contain_text("Best")
         with self.page.expect_event("framenavigated", predicate=lambda frame: frame == self.page.main_frame):
             self.command("Developer: Reload Window")
         self.page.wait_for_load_state("domcontentloaded")
-        self.command("Drift Break: Open in Editor")
-        game = self.game(screen="circuits")
-        track = game.locator(f'[data-track="{replay["track"]}"]')
-        expect(track).to_contain_text(f'Personal best {replay["score"]:,}')
+        self.command("Drift 68: Open in Editor")
+        game = self.game(screen="garage")
+        track = game.locator("[data-selection=track]")
+        expect(track).to_contain_text(f'Best {replay["score"]:,} pts')
         self.back_to_title(game)
         button(game, "Settings").click()
         expect(game.get_by_label("Graphics quality", exact=True)).to_have_value("low")
@@ -277,15 +309,15 @@ class Workbench:
         button(game, "Reset local records").click()
         self.page.get_by_role("dialog").get_by_role("button", name="Cancel", exact=True).click()
         button(game, "Back").click()
-        button(game, "Circuits").click()
-        expect(track).to_contain_text("Personal best")
+        self.open_setup_from_title(game)
+        expect(track).to_contain_text("Best")
         self.back_to_title(game)
         button(game, "Settings").click()
         button(game, "Reset local records").click()
         self.page.get_by_role("dialog").get_by_role("button", name="Reset records", exact=True).click()
         button(game, "Back").click()
-        button(game, "Circuits").click()
-        expect(track).to_contain_text("Set your first best")
+        self.open_setup_from_title(game)
+        expect(track).not_to_contain_text("Best")
         self.passed("Cancel preserves records and explicit confirmation clears them")
 
 
@@ -312,11 +344,23 @@ def main(executable, cli, output, vsix):
         "passed": ["VSIX contents and installation verified"],
     }
     replay = json.loads((output / "lap-replay.json").read_text(encoding="utf-8"))
+    room_server = os.getenv("DRIFT_MULTIPLAYER_TEST_URL")
+    if room_server == "default":
+        key = "driftBreak.multiplayer.serverUrl"
+        settings = json.loads((profile / "User" / "settings.json").read_text(encoding="utf-8"))
+        assert key not in settings
+        room_server = manifest["contributes"]["configuration"]["properties"][key]["default"]
+        assert room_server.startswith("wss://"), "The VSIX must include a secure room server default"
+        report["passed"].append("Packaged server default tested with no user override")
+    profile_flags = ["--enable-precise-memory-info", "--js-flags=--expose-gc"] if room_server else []
+    if room_server and os.getenv("DRIFT_MULTIPLAYER_TEST_LOCAL_TLS") == "1":
+        assert re.fullmatch(r"wss://(?:127\.0\.0\.1|localhost):\d+", room_server)
+        profile_flags.append("--ignore-certificate-errors")
 
     with (output / "workbench.log").open("w", encoding="utf-8") as log:
         process = subprocess.Popen([
             executable, str(output / "workspace"), *profile_args, "--new-window", "--skip-welcome",
-            "--skip-release-notes", "--disable-workspace-trust", "--locale=en-US", "--remote-debugging-port=0",
+            "--skip-release-notes", "--disable-workspace-trust", "--locale=en-US", "--remote-debugging-port=0", *profile_flags,
         ], stdout=log, stderr=log)
         try:
             with sync_playwright() as playwright:
@@ -324,7 +368,12 @@ def main(executable, cli, output, vsix):
                 page = workbench_page(browser.contexts[0])
                 page.bring_to_front()
                 try:
-                    Workbench(page, output, report).verify(replay)
+                    workbench = Workbench(page, output, report)
+                    if room_server:
+                        from multiplayer_workbench import verify_multiplayer
+                        verify_multiplayer(workbench, room_server)
+                    else:
+                        workbench.verify(replay)
                 except Exception:
                     try:
                         page.screenshot(path=str(output / "failure.png"), timeout=10_000)

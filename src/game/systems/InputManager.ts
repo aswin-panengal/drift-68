@@ -1,9 +1,16 @@
 import { EMPTY_INPUT,type InputState } from '../../shared/types';
-const KEYS=new Set(['KeyW','KeyS','KeyA','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','ShiftLeft','ShiftRight','KeyR','KeyC','Escape']);
-export function eligibleKey(code:string,modifiers:{ctrlKey:boolean;altKey:boolean;metaKey:boolean},ownsFocus:boolean):boolean {return ownsFocus&&!modifiers.ctrlKey&&!modifiers.altKey&&!modifiers.metaKey&&KEYS.has(code);}
+type DriveAction = 'reset' | 'camera' | 'pause' | 'sound' | 'minimap' | 'advancedHud';
+const KEYS=new Set(['KeyW','KeyS','KeyA','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','ShiftLeft','ShiftRight']);
+const ACTION_KEYS = new Map<string, DriveAction>([
+  ['Escape','pause'], ['KeyR','reset'], ['KeyC','camera'], ['KeyV','camera'],
+  ['KeyM','sound'], ['KeyN','minimap'], ['KeyH','advancedHud'],
+]);
+export function eligibleKey(code:string,modifiers:{ctrlKey:boolean;altKey:boolean;metaKey:boolean},ownsFocus:boolean):boolean {
+  return ownsFocus&&!modifiers.ctrlKey&&!modifiers.altKey&&!modifiers.metaKey&&(KEYS.has(code)||ACTION_KEYS.has(code));
+}
 export class InputManager {
   private keys=new Set<string>();private inside=false;private gamepadWasConnected=false;
-  constructor(private root:HTMLElement,private canDrive:()=>boolean,private pause:()=>void,private action:(action:'reset'|'camera'|'pause')=>void){
+  constructor(private root:HTMLElement,private canDrive:()=>boolean,private pause:()=>void,private action:(action:DriveAction)=>void){
     root.addEventListener('pointerenter',this.enter);root.addEventListener('pointerleave',this.leave);
     root.addEventListener('keydown',this.down);root.addEventListener('keyup',this.up);root.addEventListener('blur',this.blur,true);
     window.addEventListener('blur',this.blur);document.addEventListener('visibilitychange',this.visibility);window.addEventListener('gamepaddisconnected',this.disconnect);
@@ -17,9 +24,11 @@ export class InputManager {
   private down=(e:KeyboardEvent):void=>{
     if(!eligibleKey(e.code,e,this.ownsFocus)||!this.canDrive())return;
     e.preventDefault();e.stopPropagation();
-    if(!e.repeat&&e.code==='Escape'){this.clear();this.action('pause');return;}
-    if(!e.repeat&&e.code==='KeyR'){this.action('reset');return;}
-    if(!e.repeat&&e.code==='KeyC'){this.action('camera');return;}
+    const action=ACTION_KEYS.get(e.code);
+    if(action){
+      if(!e.repeat)this.action(action);
+      return;
+    }
     this.keys.add(e.code);
   };
   private up=(e:KeyboardEvent):void=>{this.keys.delete(e.code);if(eligibleKey(e.code,e,this.ownsFocus)&&this.canDrive())e.preventDefault();};

@@ -23,7 +23,7 @@ async function until(check: () => boolean, description: string): Promise<void> {
 
 export async function run(): Promise<void> {
   const passed: string[] = [];
-  const extension = vscode.extensions.all.find((candidate) => candidate.packageJSON.name === 'drift-break');
+  const extension = vscode.extensions.getExtension('aswin-dev.drift-68');
   assert.ok(extension, 'Extension discovered');
   const api: ExtensionApi = await extension.activate();
   assert.ok(extension.isActive);
@@ -36,7 +36,7 @@ export async function run(): Promise<void> {
   assert.equal(extension.packageJSON.contributes.keybindings, undefined);
   await vscode.commands.executeCommand('driftBreak.openSidebar');
   await until(() => Boolean(api.sidebar), 'the Explorer view');
-  assert.equal(api.sidebar?.title, 'Drift Break');
+  assert.equal(api.sidebar?.title, 'Drift 68');
   passed.push('Explorer contribution and commands work without global driving keybindings');
 
   const source = await vscode.workspace.openTextDocument({

@@ -1,7 +1,7 @@
-# Drift Break
+# Drift 68
 
 ## Platform
-Webview game inside a desktop VS Code extension.
+Desktop VS Code webview game. A standalone browser build is available for local testing.
 
 ## Stack
 User specified: strict TypeScript, Three.js, Vite, esbuild, native Web Audio, Vitest, official vsce.
@@ -10,10 +10,12 @@ User specified: strict TypeScript, Three.js, Vite, esbuild, native Web Audio, Vi
 Developers taking short, relaxing breaks while assistants work. Code. Drift. Relax.
 
 ## Constraints
-The supplied implementation brief is the product authority. Exactly four original cars and three closed circuits. Offline, no telemetry, source inspection, global driving shortcuts, accounts, or runtime services. Explorer, editor, maximized editor; only one active renderer. Explicit interaction begins driving. Low resource use outranks decorative complexity. Local VSIX only; no Marketplace publishing.
+Four cars and three closed circuits. Solo works offline and stores records locally. Optional online 1v1 connects to the existing Cloudflare room service. The game has no accounts, in-game analytics, source inspection or global driving shortcuts. Explorer and editor share one active renderer. Driving begins after explicit interaction.
+
+The first public target is the VS Code Marketplace. Publishing requires a reviewed GitHub release and manual approval. Browser publication is a separate decision.
 
 ## Brand commitments
-Original miniature low-poly scenic driving; natural sunlight, natural colors, minimal cream and amber HUD. art of rally is a principles reference only. No copied assets or designs.
+Miniature low-poly scenic driving with natural sunlight and a cream and amber HUD. The design brief names art of rally as a reference for broad visual principles.
 
 ## Decisions delegated by the brief
-Implementation details, original procedural geometry, precise handling values, typography, and practical test approach. No additional interview is needed: the user explicitly requests autonomous execution of this detailed brief.
+Implementation details, original procedural geometry, precise handling values, typography, and practical test approach.

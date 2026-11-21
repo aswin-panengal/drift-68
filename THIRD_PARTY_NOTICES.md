@@ -1,13 +1,14 @@
 # Third-party notices
 
-All car models, tracks, scenery, audio synthesis, icons and game code are original to this project. No art of rally content is included.
+The project MIT license applies to original project material within its scope. The components below are distributed under their respective licenses. The car models, circuits, scenery and sounds are constructed by the game code.
 
 ## Runtime
 
 - Three.js: MIT, bundled locally. https://github.com/mrdoob/three.js
+- Vite module-preload polyfill: MIT, emitted into the webview and browser bundles. https://github.com/vitejs/vite
 - Outfit font, Latin subset of the original variable font: SIL Open Font License 1.1. https://github.com/Outfitio/Outfit-Fonts and https://github.com/google/fonts/tree/main/ofl/outfit
 
-## Guidance consulted (no source code copied)
+## Guidance recorded by the project
 
 - Microsoft VS Code Webview guide: https://code.visualstudio.com/api/extension-guides/webview
 - Contribution points: https://code.visualstudio.com/api/references/contribution-points
@@ -40,6 +41,30 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+## Vite core license (module-preload polyfill)
+
+MIT License
+
+Copyright (c) 2019-present, VoidZero Inc. and Vite contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Outfit license
 

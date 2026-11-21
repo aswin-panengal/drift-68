@@ -1,4 +1,4 @@
-# Drift Break visual system
+# Drift 68 visual system
 
 The user's pinned direction wins the concept roll: original sunlit miniature landscapes, intentionally simple cars, restrained cream/amber UI. The game is an Experience surface. A quiet roadside touring guide informs menu spacing and typographic restraint; the 3D world occupies the full viewport and keeps its own natural color.
 

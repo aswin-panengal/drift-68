@@ -49,7 +49,7 @@ This includes Code startup, built-in services, extension host, DevTools connecti
 
 Production webview JavaScript is approximately 560 KB uncompressed (148 KB gzip), CSS 15 KB, and the local variable font 20 KB. The extension host is separately bundled; runtime node_modules, source maps, tests and dev tools are excluded from the VSIX.
 
-`npm run package` succeeded with official vsce 4.1.1. The local `drift-break-1.0.0.vsix` is approximately **850 KiB**, including screenshots and documentation, well below the 15 MB size target. The archive contains the host bundle, game JS/CSS, font/license and original icon; inspection found no node_modules, tests or source maps.
+`npm run package` succeeded with official vsce 4.1.1. The historical 1.0.0 VSIX is approximately **850 KiB**, including screenshots and documentation, well below the 15 MB size target. The archive contains the host bundle, game JS/CSS, font/license and original icon; inspection found no node_modules, tests or source maps.
 
 The VSIX was successfully installed with `code --install-extension` into a disposable extensions directory. The official Extension Development Host suite then ran against that **installed extension directory**, including activation, real scene initialization acknowledgement, Explorer/editor transfer, singleton panel, maximize/restore, disposal/reopening and real globalState storage. All checks passed with exit code 0. A final docs-only repack verifies matching hashes for all runtime assets against that installed, tested build. The user's regular VS Code extension directory was not modified.
 

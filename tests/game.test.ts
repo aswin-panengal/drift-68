@@ -117,5 +117,10 @@ describe('serialization, corruption recovery and focus isolation',()=>{
   });
   it('never consumes Ctrl/Alt/Meta shortcuts or unfocused typing',()=>{
     const plain={ctrlKey:false,altKey:false,metaKey:false};expect(eligibleKey('KeyW',plain,true)).toBe(true);expect(eligibleKey('KeyW',plain,false)).toBe(false);expect(eligibleKey('KeyC',{...plain,ctrlKey:true},true)).toBe(false);expect(eligibleKey('KeyV',{...plain,ctrlKey:true},true)).toBe(false);expect(eligibleKey('Space',{...plain,altKey:true},true)).toBe(false);expect(eligibleKey('KeyW',{...plain,metaKey:true},true)).toBe(false);
+    for (const key of ['KeyV', 'KeyM', 'KeyN', 'KeyH']) {
+      expect(eligibleKey(key,plain,true)).toBe(true);
+      expect(eligibleKey(key,plain,false)).toBe(false);
+      expect(eligibleKey(key,{...plain,ctrlKey:true},true)).toBe(false);
+    }
   });
 });

@@ -1,37 +1,266 @@
-import type { Settings,VehicleState } from '../../shared/types';
+import type { CarId, Settings, VehicleState } from '../../shared/types';
+import { clamp } from '../vehicle/VehiclePhysics';
+import { ENGINE_PROFILES, EngineSound, exhaustCycle } from './EngineSound';
+
+function filter(ctx: AudioContext, type: BiquadFilterType, frequency: number, q: number): BiquadFilterNode {
+  const node = ctx.createBiquadFilter();
+  node.type = type;
+  node.frequency.value = frequency;
+  node.Q.value = q;
+  return node;
+}
+
+function silentGain(ctx: AudioContext): GainNode {
+  const node = ctx.createGain();
+  node.gain.value = 0;
+  return node;
+}
+
+function fillNoise(samples: Float32Array, seed: number): void {
+  for (let i = 0; i < samples.length; i++) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) | 0;
+    samples[i] = seed / 0x80000000;
+  }
+}
+
+function createDrive(ctx: AudioContext, output: AudioNode) {
+  const volume = silentGain(ctx);
+  volume.connect(output);
+
+  const ignition = ctx.createGain();
+  ignition.connect(volume);
+  const engineGain = silentGain(ctx);
+  const exhaust = filter(ctx, 'lowpass', 750, .68);
+  const resonance = filter(ctx, 'peaking', 200, 1.15);
+  resonance.gain.value = 4;
+  exhaust.connect(resonance).connect(engineGain).connect(ignition);
+
+  const noise = ctx.createBufferSource();
+  const air = ctx.createBuffer(1, 16384, ctx.sampleRate);
+  fillNoise(air.getChannelData(0), 321);
+  noise.buffer = air;
+  noise.loop = true;
+  const intake = filter(ctx, 'bandpass', 1000, .8);
+  const intakeGain = silentGain(ctx);
+  noise.connect(intake).connect(intakeGain).connect(ignition);
+
+  const scrub = filter(ctx, 'bandpass', 850, .76);
+  const scrubGain = silentGain(ctx);
+  noise.connect(scrub).connect(scrubGain).connect(volume);
+  noise.start();
+
+  const squeal = ctx.createOscillator();
+  squeal.type = 'triangle';
+  squeal.frequency.value = 1030;
+  const squealGain = silentGain(ctx);
+  squeal.connect(squealGain).connect(volume);
+  squeal.start();
+
+  const crack = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * .052), ctx.sampleRate);
+  const samples = crack.getChannelData(0);
+  fillNoise(samples, 15827);
+  let previous = 0;
+  for (let i = 0; i < samples.length; i++) {
+    const t = i / ctx.sampleRate;
+    const raw = samples[i]!;
+    const noise = .45 * raw - .27 * previous;
+    const pressure = .7 * Math.sin(2 * Math.PI * (173 - 1240 * t) * t);
+    samples[i] = (1 - Math.exp(-2600 * t)) * (noise * Math.exp(-176 * t) + pressure * Math.exp(-102 * t));
+    previous = raw;
+  }
+  // Two synchronized channels let the audio clock cut ignition and fire the
+  // exhaust crack every cycle, even when several physics steps run in one frame.
+  const limiter = ctx.createBuffer(2, Math.round(ctx.sampleRate / 14), ctx.sampleRate);
+  const cut = limiter.getChannelData(0);
+  const bark = limiter.getChannelData(1);
+  for (let i = 0; i < cut.length; i++) {
+    const t = i / ctx.sampleRate;
+    cut[i] = -.79 * clamp(Math.min(t, .032 - t) / .003, 0, 1);
+    bark[i] = .66 * (samples[i] ?? 0);
+  }
+  const limiterChannels = ctx.createChannelSplitter(2);
+  limiterChannels.connect(ignition.gain, 0);
+  limiterChannels.connect(volume, 1);
+  const limiterPitch = silentGain(ctx);
+  limiterChannels.connect(limiterPitch, 0);
+  return {
+    volume, ignition, exhaust, resonance, engineGain, noise, intake, intakeGain, scrub, scrubGain,
+    squeal, squealGain, crack, limiter, limiterChannels, limiterPitch,
+  };
+}
+
 export class AudioManager {
-  private context?:AudioContext;private master?:GainNode;private engine?:OscillatorNode;private engineGain?:GainNode;
-  private tire?:AudioBufferSourceNode;private tireGain?:GainNode;private muted=true;
-  async unlock(settings:Settings):Promise<void> {
-    if(!settings.sound)return;
-    if(!this.context){
-      const ctx=this.context=new AudioContext();this.master=ctx.createGain();this.master.gain.value=0;this.master.connect(ctx.destination);
-      this.engine=ctx.createOscillator();this.engine.type='triangle';this.engine.frequency.value=44;this.engineGain=ctx.createGain();this.engineGain.gain.value=.04;this.engine.connect(this.engineGain);this.engineGain.connect(this.master);this.engine.start();
-      const buffer=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate),data=buffer.getChannelData(0);let seed=321;
-      for(let i=0;i<data.length;i++){seed=(seed*16807)%2147483647;data[i]=(seed/2147483647*2-1)*.4;}
-      const filter=ctx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=1400;filter.Q.value=.6;
-      this.tire=ctx.createBufferSource();this.tire.buffer=buffer;this.tire.loop=true;this.tireGain=ctx.createGain();this.tireGain.gain.value=0;this.tire.connect(filter);filter.connect(this.tireGain);this.tireGain.connect(this.master);this.tire.start();
+  private context?: AudioContext;
+  private output?: DynamicsCompressorNode;
+  private drive?: ReturnType<typeof createDrive>;
+  private engine?: { car: CarId; source: AudioBufferSourceNode; model?: EngineSound };
+  private limiter?: AudioBufferSourceNode;
+  private driving = false;
+  private readonly cues = new Set<OscillatorNode>();
+
+  private getContext(): AudioContext {
+    if (this.context) return this.context;
+    const ctx = this.context = new AudioContext();
+    const output = this.output = ctx.createDynamicsCompressor();
+    output.threshold.value = -7;
+    output.knee.value = 5;
+    output.ratio.value = 9;
+    output.attack.value = .003;
+    output.release.value = .10;
+    // Leave headroom for brief overlaps in the loudest part of the mix.
+    const peakLimiter = ctx.createWaveShaper();
+    peakLimiter.curve = Float32Array.from({ length: 257 }, (_, i) => {
+      const sample = (i - 128) / 128;
+      const excess = Math.max(0, Math.abs(sample) - .84);
+      return sample - Math.sign(sample) * excess * (1 - 1 / (1 + 5 * excess));
+    });
+    output.connect(peakLimiter).connect(ctx.destination);
+    return ctx;
+  }
+
+  unlock(settings: Settings): void {
+    if (!settings.sound || settings.volume === 0) return;
+    const ctx = this.getContext();
+    this.driving = true;
+    void ctx.resume().catch(() => {});
+  }
+
+  update(car: CarId, v: VehicleState, pedal: number, slip: number, settings: Settings, dt: number): void {
+    const ctx = this.context;
+    if (!this.driving || !settings.sound || ctx?.state !== 'running') return;
+    const drive = this.drive ??= createDrive(ctx, this.output!);
+    const t = ctx.currentTime;
+
+    if (this.engine?.car !== car) {
+      this.releaseLimiter();
+      if (this.engine) {
+        const previous = this.engine.source;
+        drive.limiterPitch.disconnect(previous.playbackRate);
+        previous.stop();
+        previous.disconnect();
+      }
+      const source = ctx.createBufferSource();
+      const profile = ENGINE_PROFILES[car];
+      source.buffer = exhaustCycle(ctx, profile);
+      source.loop = true;
+      source.connect(drive.exhaust);
+      source.playbackRate.value = source.buffer.duration * profile.idle / 120;
+      drive.limiterPitch.gain.value = source.buffer.duration * profile.redline / 120 * .034;
+      drive.limiterPitch.connect(source.playbackRate);
+      source.start();
+      this.engine = { car, source };
+      drive.resonance.frequency.value = profile.resonance;
     }
-    this.muted=false;await this.context.resume();this.master!.gain.setTargetAtTime(settings.volume*(settings.reducedMotion?.65:1),this.context.currentTime,.04);
+
+    const { source } = this.engine;
+    const engine = this.engine.model ??= new EngineSound(ENGINE_PROFILES[car], v.speed);
+    engine.step(v, pedal, slip, dt);
+    const { rpm, load } = engine;
+    const revs = rpm / engine.profile.redline;
+    drive.ignition.gain.setTargetAtTime(engine.shiftTime > .03 ? .39 : 1, t, .012);
+    source.playbackRate.setTargetAtTime(source.buffer!.duration * rpm / 120, t, .014);
+    drive.exhaust.frequency.setTargetAtTime(490 + rpm * .07 + load * (460 + rpm * .25), t, .034);
+    drive.engineGain.gain.setTargetAtTime(.23 + .13 * revs + .42 * load, t, .012);
+    drive.intake.frequency.setTargetAtTime(700 + rpm * .16, t, .05);
+    drive.intakeGain.gain.setTargetAtTime(.21 * load * revs, t, .02);
+
+    const speed = Math.max(0, v.speed);
+    const locked = v.handbrake ? .71 : .37 * v.brake;
+    const scrub = Math.max(slip, locked * clamp((speed - 5) / 15, 0, 1));
+    const lateral = Math.abs(v.lateral);
+    const flutter = Math.sin(t * 41) * .7 + Math.sin(t * 93) * .3;
+    drive.scrub.frequency.setTargetAtTime(570 + speed * 16 + lateral * 17, t, .045);
+    drive.scrubGain.gain.setTargetAtTime(scrub * (.47 + .055 * flutter), t, .036);
+    drive.squeal.frequency.setTargetAtTime(900 + speed * 11 + lateral * 27 + flutter * 52, t, .036);
+    drive.squealGain.gain.setTargetAtTime(.11 * scrub * scrub * (.8 + .2 * flutter), t, .027);
+    drive.volume.gain.setTargetAtTime(settings.volume * (settings.reducedMotion ? .65 : 1), t, .028);
+
+    if (engine.limiting && !this.limiter) {
+      const limiter = this.limiter = ctx.createBufferSource();
+      limiter.buffer = drive.limiter;
+      limiter.loop = true;
+      limiter.connect(drive.limiterChannels);
+      limiter.start();
+    } else if (!engine.limiting) {
+      this.releaseLimiter();
+    }
+    if (engine.crack > 0) this.exhaustCrack(ctx, drive, engine.crack, revs);
   }
-  update(v:VehicleState,slip:number,settings:Settings):void {
-    if(!this.context||this.muted)return;const t=this.context.currentTime;
-    this.engine!.frequency.setTargetAtTime(42+Math.abs(v.speed)*4+v.throttle*22,t,.09);this.engineGain!.gain.setTargetAtTime(.035+v.throttle*.035,t,.08);this.tireGain!.gain.setTargetAtTime(.064 * slip,t,.08);this.master!.gain.setTargetAtTime(settings.sound?settings.volume*(settings.reducedMotion?.65:1):0,t,.08);
+
+  private releaseLimiter(): void {
+    this.limiter?.stop();
+    this.limiter?.disconnect();
+    this.limiter = undefined;
   }
-  cue(finish=false):void {
-    const ctx=this.context;if(!ctx||this.muted||!this.master)return;
-    const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(finish?440:600,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(finish?880:450,ctx.currentTime+.12);gain.gain.setValueAtTime(.035,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2);osc.connect(gain);gain.connect(this.master);osc.start();osc.stop(ctx.currentTime+.22);osc.onended=()=>{osc.disconnect();gain.disconnect();};
+
+  private exhaustCrack(ctx: AudioContext, drive: ReturnType<typeof createDrive>, strength: number, revs: number): void {
+    const source = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    source.buffer = drive.crack;
+    source.playbackRate.value = .72 + .36 * revs + .11 * Math.sin(ctx.currentTime * 79);
+    gain.gain.value = strength;
+    source.connect(gain).connect(drive.volume);
+    source.onended = () => { source.disconnect(); gain.disconnect(); };
+    source.start();
   }
-  async playCue(settings:Settings,finish=false):Promise<void> {
-    if(!settings.sound)return;
-    const wasMuted=this.muted;
-    if(!this.context)await this.unlock(settings);
-    const ctx=this.context;if(!ctx)return;
-    if(wasMuted){this.muted=true;if(this.master)this.master.gain.value=0;}
-    await ctx.resume();
-    const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(finish?440:600,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(finish?880:450,ctx.currentTime+.12);gain.gain.setValueAtTime(settings.volume*.05,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.2);osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.22);
-    osc.onended=()=>{osc.disconnect();gain.disconnect();if(this.muted)void ctx.suspend();};
+
+  playCue(settings: Settings, finish = false): void {
+    if (!settings.sound || settings.volume === 0) return;
+    const ctx = this.getContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const t = ctx.currentTime;
+    osc.frequency.setValueAtTime(finish ? 440 : 600, t);
+    osc.frequency.exponentialRampToValueAtTime(finish ? 880 : 450, t + .12);
+    gain.gain.setValueAtTime(settings.volume * .05, t);
+    gain.gain.exponentialRampToValueAtTime(.0001, t + .2);
+    osc.connect(gain).connect(this.output!);
+    this.cues.add(osc);
+    osc.onended = () => {
+      this.cues.delete(osc);
+      osc.disconnect();
+      gain.disconnect();
+      if (this.context === ctx) this.suspendIfIdle();
+    };
+    osc.start();
+    osc.stop(t + .22);
+    void ctx.resume().catch(() => {});
   }
-  stop():void {this.muted=true;if(this.context&&this.master){this.master.gain.value=0;void this.context.suspend();}}
-  dispose():void {this.stop();this.engine?.stop();this.tire?.stop();void this.context?.close();this.context=undefined;}
+
+  resetEngine(): void {
+    if (this.engine) this.engine.model = undefined;
+    this.releaseLimiter();
+  }
+
+  private suspendIfIdle(): void {
+    if (!this.driving && !this.cues.size) void this.context?.suspend().catch(() => {});
+  }
+
+  stop(silenceCues = false): void {
+    this.driving = false;
+    this.resetEngine();
+    if (this.drive && this.context) {
+      const { gain } = this.drive.volume;
+      const now = this.context.currentTime;
+      gain.cancelScheduledValues(now);
+      gain.setValueAtTime(0, now);
+    }
+    if (silenceCues) {
+      for (const cue of this.cues) cue.disconnect();
+      this.cues.clear();
+    }
+    this.suspendIfIdle();
+  }
+
+  dispose(): void {
+    this.stop(true);
+    this.engine?.source.stop();
+    this.drive?.noise.stop();
+    this.drive?.squeal.stop();
+    void this.context?.close().catch(() => {});
+    this.context = undefined;
+    this.output = undefined;
+    this.engine = undefined;
+    this.drive = undefined;
+  }
 }

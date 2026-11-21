@@ -32,4 +32,4 @@ Release packaging and install smoke evidence is recorded in PERFORMANCE.md. `npm
 - [ ] Subjective handling review: release Space to recover, countersteer, brake/reverse, boost, reset; all four personalities should be enjoyable.
 - [ ] Screen-reader and high-contrast-theme review; full keyboard navigation through every menu.
 
-For manual view testing: F5 → Explorer → Drift Break → open → select content → click road. Expand, click a source tab, type `wasd r c`, copy/paste, return and verify paused. Maximize/restore with two split editor groups. Collapse/reopen Explorer, close/reopen the game, then move focus to a terminal or chat. No gameplay key should be consumed outside the clicked viewport. Production has no global driving keybindings.
+For manual view testing: F5 → Explorer → Drift 68 → open → select content → click road. Expand, click a source tab, type `wasd r c`, copy/paste, return and verify paused. Maximize/restore with two split editor groups. Collapse/reopen Explorer, close/reopen the game, then move focus to a terminal or chat. No gameplay key should be consumed outside the clicked viewport. Production has no global driving keybindings.

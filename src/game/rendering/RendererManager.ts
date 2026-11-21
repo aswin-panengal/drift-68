@@ -1,5 +1,6 @@
 import * as T from 'three';
-import { REAR_CHASE_CAMERA, type Snapshot, type DisplayMode, type Settings, type VehicleState } from '../../shared/types';
+import { REAR_CHASE_CAMERA, type CarId, type Snapshot, type DisplayMode, type Settings, type VehicleState } from '../../shared/types';
+import type { CarPose } from '../../shared/multiplayer';
 import { CARS } from '../vehicle/CarConfigs';
 import { tireSlip } from '../vehicle/VehiclePhysics';
 import { TrackPath } from '../tracks/TrackConfigs';
@@ -14,6 +15,8 @@ export class RendererManager {
   private readonly rearAnchor = new T.Vector3();
   private rearHeading = 0;
   car!:CarModel;effects?:EffectsManager;private content=new T.Group();private sun:T.DirectionalLight;
+  private opponent?:CarModel;
+  private opponentCar?:CarId;
   private target=new T.Vector3();private desired=new T.Vector3();private offset=new T.Vector3();
   private observer:ResizeObserver;private settings:Settings;private mode:DisplayMode;
   private garage=false;private initialized=false;private width=1;private height=1;private slow=0;private qualityScale=1;
@@ -34,7 +37,8 @@ export class RendererManager {
   private restored=():void=>{this.contextLost=false;this.onRestored();};
   configure(settings:Settings,mode:DisplayMode):void {this.settings=settings;this.mode=mode;this.resize();}
   load(state:Snapshot,path:TrackPath,garage=false):void {
-    disposeScene(this.content);this.effects=undefined;this.garage=garage;
+    disposeScene(this.content);this.effects=undefined;this.opponent=undefined;this.opponentCar=undefined;this.garage=garage;
+    this.renderer.domElement.setAttribute('aria-label',garage?'3D car preview':'3D driving scene');
     this.scene.background=new T.Color(garage?'#aebdb0':path.config.sky);
     this.scene.fog=new T.Fog(garage?'#aebdb0':path.config.fog,garage?60:180,garage?130:510);
     this.sun.color.set(path.config.sun);
@@ -48,6 +52,30 @@ export class RendererManager {
     }else{this.content.add(createEnvironment(path));this.effects=new EffectsManager(carConfig);this.content.add(this.effects.group);this.car.update(state.vehicle,0,true);}
     this.content.add(this.car.group);this.initialized=false;this.resize();this.draw(state,0,true);
   }
+  setOpponent(car?:CarId):void {
+    if(car===this.opponentCar)return;
+    if(this.opponent){
+      this.opponent.group.removeFromParent();
+      disposeScene(this.opponent.group);
+    }
+    this.opponentCar=car;
+    this.opponent=car?createCar(CARS[car]):undefined;
+    if(this.opponent){
+      const group=this.opponent.group;
+      group.visible=false;
+      group.traverse(object=>{object.castShadow=false;});
+      this.content.add(group);
+    }
+  }
+  moveOpponent(pose:CarPose,dt:number):void {
+    if(!this.opponent)return;
+    const {group,wheels}=this.opponent;
+    group.visible=true;
+    group.position.set(pose.x,.13,pose.z);
+    group.rotation.y=pose.heading;
+    const forward=pose.vx*Math.sin(pose.heading)+pose.vz*Math.cos(pose.heading);
+    for(const wheel of wheels)wheel.rotation.x+=forward*dt/.38;
+  }
   private resize():void {
     this.width=Math.max(1,this.container.clientWidth);this.height=Math.max(1,this.container.clientHeight);
     const quality=this.settings.quality,compact=this.mode==='sidebar';
@@ -55,7 +83,7 @@ export class RendererManager {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio,ratio)*this.qualityScale);
     this.renderer.setSize(this.width,this.height,false);
     this.renderer.shadowMap.enabled=!compact&&quality==='high';this.sun.castShadow=this.renderer.shadowMap.enabled;
-    const aspect=this.width/this.height,span=this.garage?(aspect<.8?21:15):Math.max(57,38/aspect);
+    const aspect=this.width/this.height,span=this.garage?Math.max(5.45,7.4/aspect):Math.max(57,38/aspect);
     this.camera.left=-span*aspect/2;this.camera.right=span*aspect/2;this.camera.top=span/2;this.camera.bottom=-span/2;this.camera.updateProjectionMatrix();
     this.rearCamera.aspect = aspect;
     this.rearCamera.fov = aspect < .65 ? 60 : 54;
@@ -91,17 +119,17 @@ export class RendererManager {
     const v=state.vehicle,menu=state.screen!=='drive'&&state.screen!=='pause'&&state.screen!=='results';
     const aspect=this.width/this.height;
     const rearView = !this.garage && !menu && state.settings.camera === REAR_CHASE_CAMERA;
-    const overview=!this.garage&&(state.screen==='title'||state.screen==='circuits');
+    const overview=!this.garage&&(state.screen==='title'||state.screen==='circuits'||state.screen==='lobby');
     const zoom=overview?.48:1;
     if(this.camera.zoom!==zoom){this.camera.zoom=zoom;this.camera.updateProjectionMatrix();}
     if(this.garage){
-      this.target.set(aspect>1? -3.2:0,1,aspect>1?2:0);this.offset.set(10,8,13);
+      this.target.set(0,.65,0);this.offset.set(9,5.5,12);
     }else if (rearView) {
       this.aimRearCamera(v, dt, still, state.settings.reducedMotion);
     }else{
       this.desired.set(v.x+v.vx*.4,0,v.z+v.vz*.4);
       if(menu&&aspect>1){this.desired.x-=15;this.desired.z+=9;}
-      if(state.screen==='title'&&aspect>1){
+      if((state.screen==='title'||state.screen==='lobby')&&aspect>1){
         if(state.track==='coastal')this.desired.set(-95,0,115);
         else if(state.track==='alpine')this.desired.set(0,0,-95);
         else this.desired.set(70,0,90);

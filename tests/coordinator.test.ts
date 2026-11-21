@@ -27,7 +27,14 @@ describe('single-owner session transfers',()=>{
     const c=new GameSessionCoordinator(()=>DEFAULT_SAVE,()=>{}),messages:HostMessage[]=[];
     const view:SessionView={id:'editor',mode:'editor',visible:()=>true,send:async m=>{messages.push(m);return true;}};
     c.attach(view);await c.request('editor');c.initialized('editor',1);expect(c.readyId).toBe('editor');
-    const s=createSnapshot(DEFAULT_SAVE);s.vehicle.x=31;c.capture('editor',1,s);c.attach(view);await c.request('editor');expect(messages.at(-1)).toMatchObject({type:'initialize',token:2,snapshot:s});c.initialized('editor',1);expect(c.readyId).toBeUndefined();c.initialized('editor',2);expect(c.readyId).toBe('editor');c.dispose();
+    const s=createSnapshot(DEFAULT_SAVE);s.vehicle.x=31;c.capture('editor',1,s);
+    const room={identity:{code:'JDRF3456',token:'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',car:DEFAULT_SAVE.car}};
+    c.captureRoom('editor',1,room);
+    c.captureRoom('editor',0);
+    c.attach(view);await c.request('editor');expect(messages.at(-1)).toMatchObject({type:'initialize',token:2,snapshot:s,room});
+    c.initialized('editor',1);expect(c.readyId).toBeUndefined();c.initialized('editor',2);expect(c.readyId).toBe('editor');
+    c.detach('editor');c.attach(view);await c.request('editor');expect(messages.at(-1)).toMatchObject({type:'initialize',token:3,room:undefined});
+    c.dispose();
   });
   it('does not give another view a lease when a source message rejects',async()=>{
     const c=new GameSessionCoordinator(()=>DEFAULT_SAVE,()=>{},20),messages:HostMessage[]=[];

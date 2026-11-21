@@ -19,6 +19,7 @@ delete process.env.ELECTRON_RUN_AS_NODE;
 const executable = process.env.DRIFT_VSCODE_PATH || await downloadAndUnzipVSCode(process.env.DRIFT_VSCODE_VERSION || 'stable');
 const workspace = join(run, 'workspace');
 const profile = join(run, 'profile');
+const roomServer = process.env.DRIFT_MULTIPLAYER_TEST_URL;
 await mkdir(workspace);
 await mkdir(join(profile, 'User'), { recursive: true });
 await writeFile(join(profile, 'User', 'settings.json'), JSON.stringify({
@@ -29,6 +30,9 @@ await writeFile(join(profile, 'User', 'settings.json'), JSON.stringify({
   'telemetry.telemetryLevel': 'off',
   'update.mode': 'none',
   'extensions.autoUpdate': false,
+  ...(roomServer && roomServer !== 'default'
+    ? { 'driftBreak.multiplayer.serverUrl': roomServer }
+    : {}),
 }));
 
 if (mode === '--workbench') {

@@ -1,0 +1,67 @@
+name: Publish to VS Code Marketplace
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published GitHub release tag such as v1.1.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: drift-68-marketplace
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.repository == 'aswin-panengal/drift-break' && github.ref == 'refs/heads/main' && inputs.release_tag != ''
+    uses: ./.github/workflows/ci.yml
+    with:
+      release_tag: ${{ inputs.release_tag }}
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: marketplace
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Require Marketplace publishing to be enabled in the reviewed environment
+        env:
+          PUBLISH_ENABLED: ${{ vars.MARKETPLACE_PUBLISH_ENABLED }}
+        run: '[[ "$PUBLISH_ENABLED" == true ]]'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: drift-68-release
+          path: release
+      - name: Verify the reviewed artifact
+        run: |
+          (cd release && sha256sum --check SHA256SUMS.txt)
+          [[ "$(cat release/SOURCE_COMMIT.txt)" =~ ^[0-9a-f]{40}$ ]]
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: refs/tags/${{ inputs.release_tag }}
+          path: source
+          persist-credentials: false
+      - name: Verify the publishing tool source matches the artifact
+        run: test "$(git -C source rev-parse HEAD)" = "$(cat release/SOURCE_COMMIT.txt)"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.14.1'
+          package-manager-cache: false
+      - name: Install the locked Marketplace CLI
+        working-directory: source
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Publish the verified VSIX using OIDC
+        working-directory: source
+        run: ./node_modules/.bin/vsce publish --oidc --packagePath "../release/drift-68-${RELEASE_TAG#v}.vsix"

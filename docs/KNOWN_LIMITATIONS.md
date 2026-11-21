@@ -10,4 +10,4 @@
 - Explorer section height is controlled by VS Code. Drag its upper divider for room to play; around 360–600 pixels is comfortable. Very short sections require menu scrolling. The compact garage reserves a genuine 3D preview above its controls.
 - A paused/hidden view reconstructs from a versioned snapshot. Hard application crashes can lose up to roughly two seconds of unsaved driving, while already saved records/preferences remain in global storage. An unresponsive transfer fails closed and offers recovery by closing the stale view.
 
-This is a complete local V1 implementation and reviewable VSIX, with the test evidence and remaining environment-dependent checks separated in ACCEPTANCE.md. It is not claimed to satisfy unmeasured hardware performance or every item of the broad release definition.
+See ACCEPTANCE.md for earlier solo verification. Multiplayer depends on room server availability and account capacity. The relay accepts client finish reports, so races are designed for casual play with friends.
