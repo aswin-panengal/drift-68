@@ -1,6 +1,6 @@
 # Drift 68 1.1.1 release checklist
 
-The candidate is **Drift 68 1.1.1**, extension **`aswin-dev.drift-68`**, developer **Aswin Panengal**, planned tag **`v1.1.1`**. This patch refreshes the title and Rearwind 84 model. The existing private repository is `aswin-panengal/drift-break`. GitHub Actions builds the VSIX and offline browser ZIP. The [verification record](RELEASE_VERIFICATION.md#drift-68-111) covers the local patch.
+The candidate is **Drift 68 1.1.1**, extension **`aswin-dev.drift-68`**, developer **Aswin Panengal**, planned tag **`v1.1.1`**. This patch refreshes the title and Rearwind 84 model. The existing private repository is `aswin-panengal/drift-68`. GitHub Actions builds the VSIX and offline browser ZIP. The [verification record](RELEASE_VERIFICATION.md#drift-68-111) covers the local patch.
 
 ## Before making the repository public
 
@@ -19,7 +19,7 @@ The owner accepts the old email. Under the chosen history-preserving path, the o
 
 ### Repository identity and first push
 
-Keep the repository at `aswin-panengal/drift-break` and use Drift 68 as the product name. The repository URL in the package manifest, release commands and Marketplace Trusted Publishing policy follows that decision. The Worker origin and protocol retain their existing identifiers. The repository About description and topics were empty at review. Before opening access, use the description ?A lightweight 3D drifting game for coding breaks in VS Code, with offline Solo and online 1v1.? Suggested topics are `vscode-extension`, `threejs` and `drifting`.
+The GitHub repository was renamed to `aswin-panengal/drift-68`. Use that name in the package manifest, release commands and Marketplace Trusted Publishing policy. Use the About description "A lightweight 3D drifting game for coding breaks in VS Code, featuring offline Solo and online 1v1." Use the topics `vscode-extension`, `racing-game`, `threejs`, `drifting` and `multiplayer`.
 
 After explicit push approval, fetch `origin/main` again. Check that the reviewed candidate descends from its current tip and that the commit changes match the approved file list. Use the normal push below only from the reviewed candidate. If the remote has advanced, stop and review its new commits before proceeding.
 
@@ -39,7 +39,7 @@ Review the private CI result and confirm the exact candidate SHA on GitHub befor
 - [ ] After explicit approval, create a draft for the existing tag. Attach the VSIX and the two verification files from the approved CI artifact. Keep the offline browser ZIP for a later release decision. Review the assets and release notes, then approve publishing the GitHub draft. Run the example from the artifact directory with the GitHub CLI authenticated.
 
   ```sh
-  gh release create v1.1.1 --repo aswin-panengal/drift-break --verify-tag --draft \
+  gh release create v1.1.1 --repo aswin-panengal/drift-68 --verify-tag --draft \
     --title 'Drift 68 1.1.1' --notes 'Refreshed title screen and Rearwind 84 model. Includes offline Solo and online 1v1.' \
     drift-68-1.1.1.vsix SHA256SUMS.txt SOURCE_COMMIT.txt
   ```
@@ -69,11 +69,11 @@ Compare the `SHA256SUMS.txt` files. Windows and Linux checkouts can differ in li
   | --- | --- |
   | Policy name | Drift 68 GitHub release |
   | Repository owner | `aswin-panengal` |
-  | Repository | `drift-break` |
+  | Repository | `drift-68` |
   | Workflow | `marketplace.yml` |
   | Environment | `marketplace` |
 
-- [ ] After a stable GitHub release is public and Marketplace publication is explicitly approved, dispatch from `main` with `gh workflow run marketplace.yml --repo aswin-panengal/drift-break --ref main -f release_tag=v1.1.1`. The verification job rebuilds the tagged source and compares its VSIX bytes, checksum manifest and source commit against the public GitHub release. Review that job before approving the `marketplace` environment in Actions. The publishing job verifies the downloaded VSIX again and sends that file with `vsce publish --oidc --packagePath`. The workflow runs only on manual dispatch.
+- [ ] After a stable GitHub release is public and Marketplace publication is explicitly approved, dispatch from `main` with `gh workflow run marketplace.yml --repo aswin-panengal/drift-68 --ref main -f release_tag=v1.1.1`. The verification job rebuilds the tagged source and compares its VSIX bytes, checksum manifest and source commit against the public GitHub release. Review that job before approving the `marketplace` environment in Actions. The publishing job verifies the downloaded VSIX again and sends that file with `vsce publish --oidc --packagePath`. The workflow runs only on manual dispatch.
 - [ ] Verify the Marketplace listing, publisher, published version, README links, and installation once the approved run succeeds. If withdrawal is necessary, use **Unpublish** in publisher management. [Marketplace unpublishing](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#unpublishing-extensions)
 
 ### Verify the public listing

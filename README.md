@@ -9,7 +9,7 @@ Choose from four cars and three closed circuits. Chase a personal best in Lap Ch
 ## Install locally
 
 1. In desktop VS Code 1.110 or later, open **Extensions → … → Install from VSIX…**.
-2. Choose the VSIX from [GitHub Releases](https://github.com/aswin-panengal/drift-break/releases), or build one with `npm run package`.
+2. Choose the VSIX from [GitHub Releases](https://github.com/aswin-panengal/drift-68/releases), or build one with `npm run package`.
 3. Open **Explorer → Drift 68**, then select **Play**. If the view is missing, right-click the Explorer section headings and enable it.
 
 You can also run `code --install-extension "path/to/drift-68-1.1.1.vsix"`.
@@ -93,7 +93,7 @@ VS Code test runners download the stable desktop build by default. Set `DRIFT_VS
 
 ### Release builds
 
-The extension ID is `aswin-dev.drift-68`. GitHub Actions lints, tests and packages each push and pull request. See the [release checklist](https://github.com/aswin-panengal/drift-break/blob/main/docs/RELEASE.md) for GitHub artifacts, version checks, and the approval required for Marketplace publishing.
+The extension ID is `aswin-dev.drift-68`. GitHub Actions lints, tests and packages each push and pull request. See the [release checklist](https://github.com/aswin-panengal/drift-68/blob/main/docs/RELEASE.md) for GitHub artifacts, version checks, and the approval required for Marketplace publishing.
 
 ## Host the browser version
 
@@ -101,7 +101,7 @@ The standalone browser build requires WebGL 2 and a keyboard or supported gamepa
 
 Development-only `?debug` enables FPS, frame interval, draw calls, triangles, heap (when available), resolution, view and update counts. Production builds remove the debug probe and overlay activation. Menus render on demand; no hidden high-frequency loop is required.
 
-See [architecture](docs/ARCHITECTURE.md), [acceptance evidence and manual checklist](docs/ACCEPTANCE.md), [performance measurements](docs/PERFORMANCE.md), [known limitations](docs/KNOWN_LIMITATIONS.md), and [third-party notices](THIRD_PARTY_NOTICES.md). Original project code is MIT licensed. Report problems in [GitHub Issues](https://github.com/aswin-panengal/drift-break/issues).
+See [architecture](docs/ARCHITECTURE.md), [acceptance evidence and manual checklist](docs/ACCEPTANCE.md), [performance measurements](docs/PERFORMANCE.md), [known limitations](docs/KNOWN_LIMITATIONS.md), and [third-party notices](THIRD_PARTY_NOTICES.md). Original project code is MIT licensed. Report problems in [GitHub Issues](https://github.com/aswin-panengal/drift-68/issues).
 
 ## Author
 

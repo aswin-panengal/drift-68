@@ -8,12 +8,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aswin-panengal/drift-break.git"
+    "url": "https://github.com/aswin-panengal/drift-68.git"
   },
   "bugs": {
-    "url": "https://github.com/aswin-panengal/drift-break/issues"
+    "url": "https://github.com/aswin-panengal/drift-68/issues"
   },
-  "homepage": "https://github.com/aswin-panengal/drift-break#readme",
+  "homepage": "https://github.com/aswin-panengal/drift-68#readme",
   "engines": {
     "vscode": "^1.110.0"
   },

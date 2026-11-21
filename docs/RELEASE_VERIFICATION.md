@@ -2,6 +2,8 @@
 
 ## Drift 68 1.1.1
 
+The release repository is [aswin-panengal/drift-68](https://github.com/aswin-panengal/drift-68). Use archives and checksums built after the repository rename for release verification.
+
 The title shows the yellow Rearwind 84 drifting through an Alpine Pass switchback. Both WebP crops come from one frame rendered with the in-game Close follow camera. The capture script starts the car at road speed on the approach, applies handbrake and steering inputs to the normal simulation, and captures the resulting smoke and skid marks. The title plays a short camera transition and honors reduced motion. The two cover images total about 32 KB.
 
 With a local Vite dev server running, regenerate both crops with:

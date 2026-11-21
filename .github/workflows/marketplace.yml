@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   verify:
-    if: github.repository == 'aswin-panengal/drift-break' && github.ref == 'refs/heads/main' && inputs.release_tag != ''
+    if: github.repository == 'aswin-panengal/drift-68' && github.ref == 'refs/heads/main' && inputs.release_tag != ''
     uses: ./.github/workflows/ci.yml
     with:
       release_tag: ${{ inputs.release_tag }}
