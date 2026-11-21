@@ -2,7 +2,7 @@
 
 **Code. Drift. Relax.** A small 3D drifting game in VS Code. Take a lap along the coast, find your line in the mountains, or unwind beneath autumn trees. Solo works offline.
 
-![Drift 68](docs/screenshots/title.png)
+![Drift 68 title screen with the Rearwind 84 drifting on Alpine Pass](docs/screenshots/title.png)
 
 Choose from four cars and three closed circuits. Chase a personal best in Lap Challenge, take an untimed Zen Drive, or invite a friend to an online 1v1. Procedural low-poly scenes, synthesized audio, and local records. Drift 68 has no accounts or telemetry, loads its assets locally, and does not read your source files.
 
@@ -12,7 +12,7 @@ Choose from four cars and three closed circuits. Chase a personal best in Lap Ch
 2. Choose the VSIX from [GitHub Releases](https://github.com/aswin-panengal/drift-break/releases), or build one with `npm run package`.
 3. Open **Explorer → Drift 68**, then select **Play**. If the view is missing, right-click the Explorer section headings and enable it.
 
-You can also run `code --install-extension "path/to/drift-68-1.1.0.vsix"`.
+You can also run `code --install-extension "path/to/drift-68-1.1.1.vsix"`.
 
 For comfortable sidebar play, drag the Drift 68 section's upper divider to give it around 360–600 pixels of height. VS Code controls this size.
 
@@ -84,7 +84,7 @@ Press **F5** with the **Run Drift 68** launch configuration for an isolated Exte
 python -m pip install playwright psutil
 python -m playwright install chromium
 npm run test:extension
-npm run test:workbench -- drift-68-1.1.0.vsix
+npm run test:workbench -- drift-68-1.1.1.vsix
 ```
 
 The workbench suite installs the VSIX into a fresh profile and plays a complete scoring lap with simulated standard gamepad input. It checks keyboard input, view switching, record persistence, and reset confirmation. Reports and screenshots go under `test-results/`. Run `npm run test:browser` with `npm run dev` active for the standalone game suite.

@@ -12,7 +12,7 @@ from zipfile import ZipFile, ZipInfo
 
 WEB_FILES = {
     'game.js', 'index.css', 'index.html', 'Outfit.woff2', 'OFL-Outfit.txt',
-    'drift-cover.webp', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
+    'drift-cover.webp', 'drift-cover-portrait.webp', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
 }
 VSIX_FILES = {
     '[Content_Types].xml', 'extension.vsixmanifest', 'extension/package.json',

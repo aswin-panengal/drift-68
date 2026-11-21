@@ -12,6 +12,7 @@ export function createCar(config:CarConfig):CarModel {
   const light=new T.MeshLambertMaterial({color:'#f7e4ae',emissive:'#a28e4e',emissiveIntensity:.12});
   const brakes=new T.MeshLambertMaterial({color:'#9b382e',emissive:'#e84d2e',emissiveIntensity:0});
   const l=config.length,w=config.width;
+  const rearwind=config.id==='rearwind';
   function box(parent:T.Group,x:number,y:number,z:number,sx:number,sy:number,sz:number,mat:T.Material):T.Mesh {
     const m=new T.Mesh(new T.BoxGeometry(sx,sy,sz),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
   }
@@ -26,7 +27,10 @@ export function createCar(config:CarConfig):CarModel {
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setIndex(idx);g.computeVertexNormals();return g;
   };
   const nose=config.id==='rearwind'?.82:config.id==='ironback'?.96:.88;
-  const shell=new T.Mesh(bodyGeometry([[-l*.5,w*.42,.38,.8],[-l*.34,w*.5,.34,1],[l*.25,w*.5,.34,.96],[l*.5,w*.5*nose,.43,.83]]),paint);body.add(shell);shell.castShadow=true;
+  const shell=new T.Mesh(bodyGeometry([
+    [-l*.5,w*.42,.38,.8],[-l*.34,w*(rearwind?.52:.5),.34,1],
+    [l*.25,w*.5,.34,.96],[l*.5,w*.5*nose,.43,.83],
+  ]),paint);body.add(shell);shell.castShadow=true;
   const cabinZ=config.id==='ironback'?-.35:config.id==='rearwind'?.05:-.08;
   const cabinLength=config.id==='solace'?l*.5:l*.45;
   const cabin=new T.Mesh(bodyGeometry([[cabinZ-cabinLength*.5,w*.41,.86,1.1],[cabinZ-cabinLength*.28,w*.34,.9,1.63],[cabinZ+cabinLength*.18,w*.34,.9,1.63],[cabinZ+cabinLength*.5,w*.4,.86,1.02]]),glass);body.add(cabin);cabin.castShadow=true;
@@ -40,6 +44,14 @@ export function createCar(config:CarConfig):CarModel {
   }
   box(body,0,.49,l*.5,w*.8,.12,.09,dark);box(body,0,.49,-l*.5,w*.8,.12,.09,dark);
   box(body,0,.71,l*.5+.03,w*.28,.14,.07,dark);
+  if(rearwind){
+    for(const side of [-1,1]){
+      box(body,side*w*.3,.94,-l*.434,.105,.19,.16,dark).rotation.x=-.2;
+      box(body,side*w*.495,.43,-.04,.075,.12,l*.52,dark);
+    }
+    box(body,0,1.045,-l*.445,w*.91,.09,.32,paint).rotation.x=-.12;
+    box(body,0,.45,l*.51,w*.84,.07,.18,dark);
+  }
   if(config.id==='ironback'){box(body,0,1.02,l*.25,w*.36,.12,l*.23,dark);}
   if(config.id==='streetline'){for(const x of [-.62,.62])box(body,x,1.18,-l*.4,.08,.5,.12,dark);box(body,0,1.42,-l*.42,w*.95,.09,.4,paint);}
   if(config.id==='solace'){box(body,0,.9,-l*.46,w*.7,.07,.22,paint);}
@@ -48,14 +60,24 @@ export function createCar(config:CarConfig):CarModel {
   for(const child of body.children){if(!(child instanceof T.Mesh)||Array.isArray(child.material))continue;child.updateMatrix();const geometry=child.geometry.clone().applyMatrix4(child.matrix);geometry.deleteAttribute('uv');const list=batches.get(child.material)??[];list.push(geometry);batches.set(child.material,list);original.add(child.geometry);}
   body.clear();original.forEach(g=>g.dispose());
   for(const [material,geometries] of batches){const geometry=mergeGeometries(geometries);if(geometry){const mesh=new T.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;body.add(mesh);}geometries.forEach(g=>g.dispose());}
-  const wheelGeo=new T.CylinderGeometry(.38,.38,.25,12);wheelGeo.rotateZ(Math.PI/2);
-  const hubGeo=new T.CylinderGeometry(.21,.21,.265,8);hubGeo.rotateZ(Math.PI/2);
+  const tireWidth=rearwind?.30:.25;
+  const wheelGeo=new T.CylinderGeometry(.38,.38,tireWidth,12);wheelGeo.rotateZ(Math.PI/2);
+  const hubGeo=new T.CylinderGeometry(rearwind?.25:.21,rearwind?.25:.21,tireWidth+.015,rearwind?12:8);hubGeo.rotateZ(Math.PI/2);
   const wheels:T.Group[]=[],steer:T.Group[]=[];
   for(const z of [-l*.3,l*.29])for(const x of [-w*.51,w*.51]){
     const pivot=new T.Group(),spin=new T.Group();pivot.position.set(x,.4,z);pivot.add(spin);group.add(pivot);
     const tire=new T.Mesh(wheelGeo,dark),hub=new T.Mesh(hubGeo,chrome);tire.castShadow=true;spin.add(tire,hub);
     // Radial spokes make rotation visible even on these low-poly wheels.
-    box(spin,x>0?.14:-.14,0,0,.025,.38,.045,dark);
+    if(rearwind){
+      const face=Math.sign(x)*.163;
+      const slots=Array.from({length:3},(_,i)=>new T.BoxGeometry(.015,.44,.045)
+        .rotateX(i*Math.PI/3).translate(face,0,0));
+      const rim=new T.Mesh(mergeGeometries(slots),dark);
+      slots.forEach(slot=>slot.dispose());
+      spin.add(rim);
+    }else{
+      box(spin,x>0?.14:-.14,0,0,.025,.38,.045,dark);
+    }
     wheels.push(spin);if(z>0)steer.push(pivot);
   }
   const shadow=new T.Mesh(new T.CircleGeometry(1,20),new T.MeshBasicMaterial({color:'#1b2723',transparent:true,opacity:.2,depthWrite:false}));

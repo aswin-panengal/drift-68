@@ -51,7 +51,7 @@ const setupRow=(key:SetupPicker,label:string):string=>`<section class="setup-pic
 const titleMenu = `<section class="title-screen" aria-labelledby="title-heading">
   <div class="title-main">
     <h1 id="title-heading">Drift <span>68</span></h1>
-    <button class="title-play" data-action="play">${icon('play')}<span>Play</span></button>
+    <button class="title-play" data-action="play"><span>Play</span>${icon('arrow')}</button>
   </div>
   <nav class="title-links" aria-label="Game information">
     ${button('settings','Settings')}${button('licenses','Licenses')}
@@ -131,6 +131,7 @@ export class Game {
       this.stop();this.audio.dispose();this.lease=false;this.data=recoverSave(message.data);this.disposeRenderer();
       this.restoreSceneRoot();
       this.root.dataset.screen='idle';this.overlay.hidden=false;this.hud.hidden=true;
+      this.root.classList.toggle('reduced-motion',this.data.settings.reducedMotion);
       this.root.setAttribute('data-cover','');
       this.root.removeAttribute('data-multiplayer');
       this.root.setAttribute('aria-busy','false');
@@ -141,6 +142,7 @@ export class Game {
       this.resumeRoom=this.roomServer?message.room:undefined;
       const restored=message.snapshot??this.bridge.restored();
       const state=validSnapshot(restored)?structuredClone(restored):createSnapshot(this.data);state.settings={...this.data.settings};
+      this.root.classList.toggle('reduced-motion',state.settings.reducedMotion);
       if(state.screen==='drive')state.screen='pause';
       if(state.screen==='circuits')state.screen='garage'; // The former circuit page shares the Solo setup now.
       const destination=this.titleDestination;
@@ -177,6 +179,7 @@ export class Game {
       const key=recordKey(this.state.track,this.state.car);
       const previousBest=this.data.records[key]?.score;
       this.data=recoverSave(message.data);
+      if(this.root.dataset.screen==='idle')this.root.classList.toggle('reduced-motion',this.data.settings.reducedMotion);
       if(this.state.screen==='garage'&&this.data.records[key]?.score!==previousBest)this.updateSetup();
       if(this.state.screen==='results')this.show('results');
     }

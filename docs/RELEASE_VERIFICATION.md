@@ -1,4 +1,26 @@
-# Drift 68 1.1.0 release verification
+# Drift 68 release verification
+
+## Drift 68 1.1.1
+
+The title shows the yellow Rearwind 84 drifting through an Alpine Pass switchback. Both WebP crops come from one frame rendered with the in-game Close follow camera. The capture script starts the car at road speed on the approach, applies handbrake and steering inputs to the normal simulation, and captures the resulting smoke and skid marks. The title plays a short camera transition and honors reduced motion. The two cover images total about 32 KB.
+
+With a local Vite dev server running, regenerate both crops with:
+
+```sh
+python scripts/capture-cover.py http://127.0.0.1:5173
+```
+
+Run the browser suite to capture `test-results/browser/title.png` for the README and Marketplace package. GPU backends and encoder versions can affect capture bytes.
+
+Local archives and SHA-256 checksums are under `release/1.1.1/`. Two local pack runs produced identical `drift-68-1.1.1.vsix` and `drift-68-web-1.1.1.zip` archives.
+
+- ESLint, application and Worker type checks, the production build, and all 61 Vitest tests passed.
+- The browser suite covered all 12 car and circuit combinations, Solo scoring and record persistence, Zen Drive, saved reduced motion, and WebGL recovery. The extracted production ZIP loaded both title crops and ran Solo with external requests blocked.
+- In VS Code 1.110.0, the extension host and installed workbench suites passed. The workbench loaded the title artwork in Explorer and the editor, completed a scoring lap, and verified that records survive reload and clear only after confirmation.
+- The packaged VSIX passed 1v1 in Explorer and the editor against a local Worker over TLS. The suite covered room creation and joining, movement relay, pause, reconnect, race results, and room cleanup.
+- VS Code 1.147.0 listed `aswin-dev.drift-68@1.1.1` in the default extension profile and after upgrading the same-ID 1.1.0 VSIX in a disposable profile. The earlier `aswin-dev.drift-break` prerelease uses a separate extension ID.
+
+## Drift 68 1.1.0 release verification
 
 - **Developer** Aswin Panengal
 - **Extension** `aswin-dev.drift-68`
@@ -24,7 +46,7 @@ The extension ID changes to `aswin-dev.drift-68`. It is a separate installation 
 
 The existing copyright holder line was retained because repository authorship metadata and the stated developer identity do not independently establish the rights chain. Use `Copyright (c) 2026 Aswin Panengal` on Aswin's original material once ownership is confirmed. The combined notices identify the separately licensed runtime components and the [dependency inventory](DEPENDENCY_LICENSES.md) covers the installed toolchain. The original-brand audit is intentionally excluded from release staging and packages.
 
-To regenerate the cover, run a clean local Vite dev server and use Playwright Chromium and Pillow. Headless GPU backends and encoder versions can affect capture bytes. The production build copies the reviewed image already in the source tree. This candidate cover SHA-256 is `b64a1393f28a7798538bcd5ef620268b9a51494649ff7dc8e75c9587fd7a076e`.
+To regenerate the 1.1.0 cover, run a local Vite dev server from a 1.1.0 checkout and use Playwright Chromium and Pillow. Headless GPU backends and encoder versions can affect capture bytes. The production build copies the reviewed image already in the source tree. The 1.1.0 cover SHA-256 is `b64a1393f28a7798538bcd5ef620268b9a51494649ff7dc8e75c9587fd7a076e`.
 
 ```sh
 npm run dev

@@ -34,7 +34,7 @@ with sync_playwright() as p:
     assert page.locator('canvas').count()==0,'Idle view allocated WebGL'
     expect(page.locator('#title-heading')).to_have_text('Drift 68')
     assert page.evaluate('document.fonts.check("400 20px Outfit")')
-    page.screenshot(path=str(SHOTS/'title.png'))
+    page.screenshot(path=str(SHOTS/'title.png'), animations='disabled')
     page.get_by_role('button',name='Licenses',exact=True).click()
     assert 'Permission is hereby granted' in page.locator('#game-license').inner_text()
     page.get_by_text('Third-party notices',exact=True).click()
@@ -204,7 +204,12 @@ with sync_playwright() as p:
     page.evaluate('window.__drift.receive({type:"mode",mode:"maximized"})')
     metrics['maximized']=page.evaluate('window.__drift.diagnostics()')
     # Persistent preferences and records survive a fresh document.
-    page.reload();page.wait_for_load_state('networkidle');page.get_by_role('button',name='Play',exact=True).click()
+    page.reload();page.wait_for_load_state('networkidle')
+    page.get_by_role('button',name='Settings',exact=True).click()
+    page.locator('[data-setting=reducedMotion]').check()
+    page.reload();page.wait_for_load_state('networkidle')
+    expect(page.locator('#scene')).to_have_css('animation-name','none')
+    page.get_by_role('button',name='Play',exact=True).click()
     assert page.evaluate('window.__drift.state.settings.quality')=='low'
     assert page.evaluate('window.__drift.state.settings.camera')==3
     assert page.evaluate('window.__drift.data.records["coastal:rearwind"].score')>=1234

@@ -23,7 +23,7 @@ REQUIRED_FILES = {
     "extension/dist/extension.cjs", "extension/dist/webview/index.html",
     "extension/dist/webview/game.js", "extension/dist/webview/index.css",
     "extension/dist/webview/Outfit.woff2", "extension/dist/webview/OFL-Outfit.txt",
-    "extension/dist/webview/drift-cover.webp",
+    "extension/dist/webview/drift-cover.webp", "extension/dist/webview/drift-cover-portrait.webp",
 }
 
 REPLAY_GAMEPAD = """(inputs) => {
@@ -199,14 +199,17 @@ class Workbench:
         self.pick_setup(sidebar, "car", replay["car"])
         self.pick_setup(sidebar, "track", replay["track"])
         self.back_to_title(sidebar)
+        self.verify_title_cover(sidebar)
+        self.page.screenshot(path=str(self.output / "sidebar-title.png"), animations="disabled")
         self.passed("The default Explorer height allows opening the game and selecting a car and circuit")
 
         self.command("Drift 68: Open in Editor")
         game = self.game(screen="title")
-        expect(game.locator("#scene canvas")).to_have_count(0)
+        self.verify_title_cover(game)
+        self.page.screenshot(path=str(self.output / "editor-title.png"), animations="disabled")
         assert game.evaluate('async () => (await document.fonts.load("400 20px Outfit")).some(font => font.status === "loaded")')
         assert "default-src 'none'" in game.locator('meta[http-equiv="Content-Security-Policy"]').get_attribute("content")
-        self.passed("Installed Webview starts with local game assets, font and CSP")
+        self.passed("Installed Explorer and editor titles load local artwork without WebGL")
 
         button(game, "Play").click()
         expect(game.locator("#scene canvas")).to_have_count(0)
@@ -319,6 +322,18 @@ class Workbench:
         self.open_setup_from_title(game)
         expect(track).not_to_contain_text("Best")
         self.passed("Cancel preserves records and explicit confirmation clears them")
+
+    def verify_title_cover(self, game):
+        expect(game.get_by_role("heading", name="Drift 68")).to_be_visible()
+        expect(game.locator("#scene canvas")).to_have_count(0)
+        assert game.locator("#scene").evaluate(r"""async scene => {
+            const source = getComputedStyle(scene).backgroundImage.match(/url\(["']?(.*?)["']?\)/);
+            if (!source) return false;
+            const image = new Image();
+            image.src = source[1];
+            await image.decode();
+            return image.naturalWidth > 0;
+        }""")
 
 
 def button(game, name):

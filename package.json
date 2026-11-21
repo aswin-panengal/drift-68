@@ -2,7 +2,7 @@
   "name": "drift-68",
   "displayName": "Drift 68",
   "description": "A lightweight 3D drifting game for coding breaks in VS Code. Play offline Solo or race a friend in online 1v1.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "aswin-dev",
   "author": "Aswin Panengal",
   "license": "MIT",
