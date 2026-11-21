@@ -2,7 +2,7 @@
 
 **Code. Drift. Relax.** A small 3D drifting game in VS Code. Take a lap along the coast, find your line in the mountains, or unwind beneath autumn trees. Solo works offline.
 
-![Drift 68 title screen with the Rearwind 84 drifting on Alpine Pass](docs/screenshots/title.png)
+![Yellow Rearwind 84 drifting through a mountain switchback](docs/screenshots/title.png)
 
 Choose from four cars and three closed circuits. Chase a personal best in Lap Challenge, take an untimed Zen Drive, or invite a friend to an online 1v1. Procedural low-poly scenes, synthesized audio, and local records. Drift 68 has no accounts or telemetry, loads its assets locally, and does not read your source files.
 

@@ -4,15 +4,9 @@
 
 The release repository is [aswin-panengal/drift-68](https://github.com/aswin-panengal/drift-68). Use archives and checksums built after the repository rename for release verification.
 
-The title shows the yellow Rearwind 84 drifting through an Alpine Pass switchback. Both WebP crops come from one frame rendered with the in-game Close follow camera. The capture script starts the car at road speed on the approach, applies handbrake and steering inputs to the normal simulation, and captures the resulting smoke and skid marks. The title plays a short camera transition and honors reduced motion. The two cover images total about 32 KB.
+The title backdrops use the supplied [Mountain Drift artwork](../artwork/Mountain%20Drift_%20Golden%20Switchback.png). The desktop and narrow layouts use crops of the source at 940 x 560 and 480 x 680. The 1200 x 800 README artwork keeps the original car and scene in a cropped source panel and extends the right edge with ImageGen.
 
-With a local Vite dev server running, regenerate both crops with:
-
-```sh
-python scripts/capture-cover.py http://127.0.0.1:5173
-```
-
-Run the browser suite to capture `test-results/browser/title.png` for the README and Marketplace package. GPU backends and encoder versions can affect capture bytes.
+The earlier 1.1.1 title artwork was captured from the game renderer. The browser and workbench evidence below was recorded with that artwork.
 
 Local archives and SHA-256 checksums are under `release/1.1.1/`. Two local pack runs produced identical `drift-68-1.1.1.vsix` and `drift-68-web-1.1.1.zip` archives.
 

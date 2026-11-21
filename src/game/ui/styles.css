@@ -617,10 +617,10 @@
   }
 }
 
-@media (max-width: 720px) and (min-height: 320px) and (max-aspect-ratio: 4/5) {
+@media (max-width: 720px) and (min-height: 320px) and (max-aspect-ratio: 9/10) {
   #game-root:is([data-screen=idle], [data-screen=title]) #scene {
     background-image: url('/drift-cover-portrait.webp');
-    background-position: 57% center;
+    background-position: 57% bottom;
     transform-origin: 57% 54%;
   }
 }
