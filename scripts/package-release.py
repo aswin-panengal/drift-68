@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -60,8 +61,10 @@ def main():
 
     with TemporaryDirectory(prefix='drift-vsix-') as temp:
         raw_vsix = Path(temp) / 'extension.vsix'
+        # A local Vite override must never enable multiplayer in the offline ZIP.
+        env = {**os.environ, 'VITE_DRIFT_MULTIPLAYER_URL': ''}
         subprocess.run(['node', 'node_modules/@vscode/vsce/vsce', 'package', '--no-dependencies',
-                        '--githubBranch', tag, '--out', str(raw_vsix)], check=True)
+                        '--githubBranch', tag, '--out', str(raw_vsix)], check=True, env=env)
         with ZipFile(raw_vsix) as archive:
             check_contents('VSIX', archive.namelist(), VSIX_FILES)
             vsix = {name: archive.read(name) for name in archive.namelist()}

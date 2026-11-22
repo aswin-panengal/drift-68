@@ -38,6 +38,12 @@ SQLite-backed Durable Objects and WebSocket hibernation are available on Workers
 - Room codes are private invitations. The relay trusts the clients' finish reports and uses the first report it receives. Latency can decide a close finish. There are no opponent collisions, public matchmaking, leaderboards, or server-side replay.
 - The relay accepts fixed 20-byte pose packets and limits forwarded updates and room commands per connection. Standard clients send poses at 10 Hz. Cloudflare plan limits also apply to incoming requests and messages. An unavailable service or exhausted quota may prevent joining or interrupt a race. Solo remains available from the mode picker.
 
+## Connection data
+
+Creating or joining a room opens a TLS WebSocket to the configured server. The server stores the race settings, car selections, temporary reconnect tokens, readiness and result for the room's lifetime. It relays driving poses directly to the other player. Closing or expiring a room deletes its stored state.
+
+Cloudflare processes network metadata such as IP addresses for the hosted server. Hosting logs and their retention depend on operator settings and are separate from the game's room storage. Players using a custom server connect to that operator instead. [Cloudflare connection headers](https://developers.cloudflare.com/fundamentals/reference/http-headers/) · [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/)
+
 ## Verify the service
 
 ```sh

@@ -1,17 +1,17 @@
 # Drift 68 1.1.2 release checklist
 
-The candidate is **Drift 68 1.1.2**, extension **`aswin-dev.drift-68`**, developer **Aswin Panengal**, planned tag **`v1.1.2`**. This patch closes the front and rear body panels on all four cars and improves drift revs and tire audio. The GitHub repository is `aswin-panengal/drift-68`. GitHub Actions builds the VSIX and offline browser ZIP.
+The candidate is **Drift 68 1.1.2**, extension **`aswin-dev.drift-68`**, developer **Aswin Panengal**, planned tag **`v1.1.2`**. This patch closes the front and rear body panels on all four cars and improves drift revs and tire audio. The public GitHub repository is `aswin-panengal/drift-68`. GitHub Actions builds the VSIX and offline browser ZIP.
 
-## Before making the repository public
+## Before publishing this version
 
 - [ ] Clear the Drift 68 name in the intended markets. The rebrand addresses the old exact-name finding. Rights in the new name remain unverified.
-- [ ] Confirm the MIT grant and copyright holder for original materials. The current holder line remains in place until the rights chain is confirmed. With confirmation, use `Copyright (c) 2026 Aswin Panengal` for Aswin's material, preserve other rights holders' notices, and rebuild. Review the cover capture and asset evidence in the [release verification record](RELEASE_VERIFICATION.md).
+- [x] Record the source of the Mountain Drift cover. The owner reports creating it with ChatGPT's image-generation tool. The project MIT license applies to original material within its scope, and the bundled library and font notices describe their respective terms. See the [release verification record](RELEASE_VERIFICATION.md#drift-68-112).
 - [x] Sanitize both local branch histories. Local `main` and `release/drift-68` now point to the content-identical root `cb9eeeb`, whose author and committer use the verified GitHub noreply address. Git also uses that address for future commits. The original was backed up privately outside this project. [Verification record](RELEASE_VERIFICATION.md#git-history-privacy-preflight)
 - [x] Decide on the historical email. The owner accepts that the original commit's email will be visible. Keep the existing remote root and publish the reviewed Drift 68 files as a normal descendant of `origin/main`. The alternative sanitized local root is retained for local use.
 - [x] Prepare the candidate on `publish/drift-68`, based on the fetched `origin/main` at `1f28706`. The remote and sanitized roots had identical trees, so the pending rebrand carried over byte-for-byte.
-- [ ] Review the candidate commit and approve the normal push and visibility change separately. Exclude the local historical audit, credential files, test profiles and build caches. Check Cloudflare logging and optional online privacy disclosures before publication.
+- [ ] Review the candidate commit and approve the normal push. Exclude the local historical audit, credential files, test profiles and build caches. Check Cloudflare logging and online privacy disclosures before publication.
 
-### History and privacy verification
+### Historical privacy review
 
 The authenticated review found only `main` at `1f28706`, with no other advertised heads, tags or pull-request refs. There were no open or closed pull requests, non-owner collaborators, forks, invitations, releases, issues, stored Actions secrets or deployment records. The default branch reported no classic protection, active branch rules or repository rulesets. The GitHub Wiki setting was enabled and its Git endpoint reported no repository. GitHub Actions is enabled with read-only default workflow permissions. No registered workflows, runs, artifacts or environments were present at the time of review. Gitleaks 8.30.1 returned zero findings in Git history, the candidate working tree and both unpacked 1.1.0 archives. A separate redacted scan also returned no matching credential patterns. Review the intended commit and current remote state again before opening access.
 
@@ -29,7 +29,7 @@ git merge-base --is-ancestor origin/main publish/drift-68
 git push origin publish/drift-68:main
 ```
 
-Review the private CI result and confirm the exact candidate SHA on GitHub before separately approving public visibility.
+Review the CI result and confirm the exact candidate SHA on GitHub before approving the release tag.
 
 ## Build and publish the GitHub release
 
@@ -46,7 +46,7 @@ Review the private CI result and confirm the exact candidate SHA on GitHub befor
 
 ### Reproduce the archives
 
-Use a clean checkout with Node `24.14.1`, its bundled npm `11.11.0`, and Python `3.12`. Leave `VITE_DRIFT_MULTIPLAYER_URL` unset for the distributed offline browser build. The VSIX includes the existing hosted Worker default. GitHub Actions on Ubuntu 24.04 provides the canonical release archives. The packaging script fixes archive entry order, timestamps, and permissions and checks the exact contents. README links in the VSIX resolve against the version tag.
+Use a clean checkout with Node `24.14.1`, its bundled npm `11.11.0`, and Python `3.12`. The packaging script builds the offline browser edition regardless of local Vite multiplayer settings. The VSIX includes the existing hosted Worker default. GitHub Actions on Ubuntu 24.04 provides the canonical release archives. The packaging script fixes archive entry order, timestamps, and permissions and checks the exact contents. README links in the VSIX resolve against the version tag.
 
 ```sh
 npm ci
@@ -84,6 +84,6 @@ After an explicitly approved publish, confirm the product name, ID, version, lin
 
 - [x] The rebranded candidate passed both VS Code views against an isolated local Worker, including reconnect and room cleanup. See the [verification record](RELEASE_VERIFICATION.md).
 - [x] The prior `1.1.0` package completed a normal editor 1v1 session on the default hosted Worker, including movement relay, pause, reconnect, and results. The local Worker covered Explorer 1v1, room validation and expiry, and reconnect. A simulated HTTP 503 showed the busy message and kept Solo playable.
-- [x] The local Drift 68 VSIX passed a single hosted-default editor smoke through room creation, join, readiness, movement relay and leave.
+- [x] The local 1.1.2 VSIX passed a single hosted-default editor smoke through room creation, join, readiness, movement relay, pause, reconnect, results and leave. The unavailable-server check kept Solo playable. [Verification record](RELEASE_VERIFICATION.md#drift-68-112)
 - [ ] Repeat the normal hosted smoke against the GitHub tag's final VSIX. Hosted Explorer/mobile combinations, cross-region latency, simultaneous-room capacity, long-running behavior, and real production quota exhaustion remain unverified. Use local or authorized staging for failure and capacity checks. Keep traffic to the public Worker limited to ordinary smoke play.
 - [ ] Review usage before promoting a release. The free plan's shared quotas can interrupt 1v1 and the casual relay accepts client finish reports. The browser release ships with Solo available offline, and the VSIX's 1v1 falls back to the busy message if the service is unavailable. The existing Worker name, URL, Durable Object migration and bindings are outside these workflows. [Cloudflare Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/)
