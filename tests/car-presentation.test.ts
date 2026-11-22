@@ -14,9 +14,9 @@ describe('tire audio', () => {
   const vehicle = { ...createVehicle(path), speed: 18 };
 
   it('stays silent at normal grip, at a standstill, and in reverse', () => {
-    expect(tireSoundMix(vehicle, 0, 0).gain).toBe(0);
+    expect(tireSoundMix(vehicle, 0, 0)).toMatchObject({ scrubGain: 0, chirpGain: 0 });
     for (const speed of [0, -18]) {
-      expect(tireSoundMix({ ...vehicle, handbrake: true, speed }, 1, 1).gain).toBe(0);
+      expect(tireSoundMix({ ...vehicle, handbrake: true, speed }, 1, 1)).toMatchObject({ scrubGain: 0, chirpGain: 0 });
     }
   });
 
@@ -25,11 +25,14 @@ describe('tire audio', () => {
     const coasting = tireSoundMix(vehicle, .8, 0);
     const powered = tireSoundMix(vehicle, .8, .8);
     const locked = tireSoundMix({ ...vehicle, handbrake: true }, 0, 0);
-    expect(scrub.gain).toBeGreaterThan(0);
-    expect(coasting.gain).toBeGreaterThan(locked.gain);
-    expect(locked.gain).toBeGreaterThan(scrub.gain);
+    expect(scrub.scrubGain).toBeGreaterThan(0);
+    expect(scrub.chirpGain).toBe(0);
+    expect(coasting.scrubGain).toBeGreaterThan(locked.scrubGain);
+    expect(coasting.chirpGain).toBeGreaterThan(locked.chirpGain);
+    expect(coasting.scrubGain).toBeGreaterThan(coasting.chirpGain * 4);
+    expect(locked.scrubGain).toBeGreaterThan(scrub.scrubGain);
     expect(coasting.cutoff).toBeGreaterThan(scrub.cutoff);
-    expect(powered.gain).toBeGreaterThan(coasting.gain);
+    expect(powered.scrubGain).toBeGreaterThan(coasting.scrubGain);
     expect(powered.rate).toBeGreaterThan(coasting.rate);
   });
 });
