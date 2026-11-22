@@ -40,7 +40,7 @@ Review the private CI result and confirm the exact candidate SHA on GitHub befor
 
   ```sh
   gh release create v1.1.2 --repo aswin-panengal/drift-68 --verify-tag --draft \
-    --title 'Drift 68 1.1.2' --notes 'Fixed front and rear body panels on all four cars. Improved drift audio with fuller revs between limiter bursts and a powered tire-spin layer.' \
+    --title 'Drift 68 1.1.2' --notes 'Fixed front and rear body panels on all four cars. Improved drift audio with fuller revs between limiter bursts and synthesized tire scrub and squeal that respond to grip and throttle.' \
     drift-68-1.1.2.vsix SHA256SUMS.txt SOURCE_COMMIT.txt
   ```
 

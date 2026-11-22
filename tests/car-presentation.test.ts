@@ -1,6 +1,7 @@
 import { Raycaster, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { createCar } from '../src/game/rendering/VehicleFactory';
+import { tireSoundMix } from '../src/game/systems/DriftSound';
 import { ENGINE_PROFILES, EngineSound } from '../src/game/systems/EngineSound';
 import { TrackPath, TRACKS } from '../src/game/tracks/TrackConfigs';
 import { CARS } from '../src/game/vehicle/CarConfigs';
@@ -8,6 +9,30 @@ import { createVehicle } from '../src/game/vehicle/VehiclePhysics';
 import { CAR_IDS } from '../src/shared/types';
 
 const path = new TrackPath(TRACKS.coastal);
+
+describe('tire audio', () => {
+  const vehicle = { ...createVehicle(path), speed: 18 };
+
+  it('stays silent at normal grip, at a standstill, and in reverse', () => {
+    expect(tireSoundMix(vehicle, 0, 0).gain).toBe(0);
+    for (const speed of [0, -18]) {
+      expect(tireSoundMix({ ...vehicle, handbrake: true, speed }, 1, 1).gain).toBe(0);
+    }
+  });
+
+  it('brightens from light scrub to a deep slide and responds separately to throttle and lockup', () => {
+    const scrub = tireSoundMix(vehicle, .2, 0);
+    const coasting = tireSoundMix(vehicle, .8, 0);
+    const powered = tireSoundMix(vehicle, .8, .8);
+    const locked = tireSoundMix({ ...vehicle, handbrake: true }, 0, 0);
+    expect(scrub.gain).toBeGreaterThan(0);
+    expect(coasting.gain).toBeGreaterThan(locked.gain);
+    expect(locked.gain).toBeGreaterThan(scrub.gain);
+    expect(coasting.cutoff).toBeGreaterThan(scrub.cutoff);
+    expect(powered.gain).toBeGreaterThan(coasting.gain);
+    expect(powered.rate).toBeGreaterThan(coasting.rate);
+  });
+});
 
 describe.each(CAR_IDS)('%s', car => {
   it('renders the painted body panels from outside both ends', () => {
