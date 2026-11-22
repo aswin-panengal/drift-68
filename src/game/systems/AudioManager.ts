@@ -1,5 +1,6 @@
 import type { CarId, Settings, VehicleState } from '../../shared/types';
 import { clamp } from '../vehicle/VehiclePhysics';
+import { DriftSound } from './DriftSound';
 import { ENGINE_PROFILES, EngineSound, exhaustCycle } from './EngineSound';
 
 function filter(ctx: AudioContext, type: BiquadFilterType, frequency: number, q: number): BiquadFilterNode {
@@ -43,18 +44,9 @@ function createDrive(ctx: AudioContext, output: AudioNode) {
   const intake = filter(ctx, 'bandpass', 1000, .8);
   const intakeGain = silentGain(ctx);
   noise.connect(intake).connect(intakeGain).connect(ignition);
-
-  const scrub = filter(ctx, 'bandpass', 850, .76);
-  const scrubGain = silentGain(ctx);
-  noise.connect(scrub).connect(scrubGain).connect(volume);
   noise.start();
 
-  const squeal = ctx.createOscillator();
-  squeal.type = 'triangle';
-  squeal.frequency.value = 1030;
-  const squealGain = silentGain(ctx);
-  squeal.connect(squealGain).connect(volume);
-  squeal.start();
+  const tires = new DriftSound(ctx, volume);
 
   const crack = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * .052), ctx.sampleRate);
   const samples = crack.getChannelData(0);
@@ -78,14 +70,16 @@ function createDrive(ctx: AudioContext, output: AudioNode) {
     cut[i] = -.79 * clamp(Math.min(t, .032 - t) / .003, 0, 1);
     bark[i] = .66 * (samples[i] ?? 0);
   }
+  const limiterMix = ctx.createGain();
   const limiterChannels = ctx.createChannelSplitter(2);
+  limiterMix.connect(limiterChannels);
   limiterChannels.connect(ignition.gain, 0);
   limiterChannels.connect(volume, 1);
   const limiterPitch = silentGain(ctx);
   limiterChannels.connect(limiterPitch, 0);
   return {
-    volume, ignition, exhaust, resonance, engineGain, noise, intake, intakeGain, scrub, scrubGain,
-    squeal, squealGain, crack, limiter, limiterChannels, limiterPitch,
+    volume, ignition, exhaust, resonance, engineGain, noise, intake, intakeGain, tires,
+    crack, limiter, limiterMix, limiterPitch,
   };
 }
 
@@ -164,22 +158,16 @@ export class AudioManager {
     drive.intake.frequency.setTargetAtTime(700 + rpm * .16, t, .05);
     drive.intakeGain.gain.setTargetAtTime(.21 * load * revs, t, .02);
 
-    const speed = Math.max(0, v.speed);
-    const locked = v.handbrake ? .71 : .37 * v.brake;
-    const scrub = Math.max(slip, locked * clamp((speed - 5) / 15, 0, 1));
-    const lateral = Math.abs(v.lateral);
-    const flutter = Math.sin(t * 41) * .7 + Math.sin(t * 93) * .3;
-    drive.scrub.frequency.setTargetAtTime(570 + speed * 16 + lateral * 17, t, .045);
-    drive.scrubGain.gain.setTargetAtTime(scrub * (.47 + .055 * flutter), t, .036);
-    drive.squeal.frequency.setTargetAtTime(900 + speed * 11 + lateral * 27 + flutter * 52, t, .036);
-    drive.squealGain.gain.setTargetAtTime(.11 * scrub * scrub * (.8 + .2 * flutter), t, .027);
+    drive.tires.update(v, slip, engine.wheelspin, t);
     drive.volume.gain.setTargetAtTime(settings.volume * (settings.reducedMotion ? .65 : 1), t, .028);
 
+    // Keep the engine audible through each cut as the limiter and tires overlap.
+    drive.limiterMix.gain.setTargetAtTime(1 - .38 * slip, t, .035);
     if (engine.limiting && !this.limiter) {
       const limiter = this.limiter = ctx.createBufferSource();
       limiter.buffer = drive.limiter;
       limiter.loop = true;
-      limiter.connect(drive.limiterChannels);
+      limiter.connect(drive.limiterMix);
       limiter.start();
     } else if (!engine.limiting) {
       this.releaseLimiter();
@@ -229,6 +217,7 @@ export class AudioManager {
 
   resetEngine(): void {
     if (this.engine) this.engine.model = undefined;
+    if (this.context) this.drive?.tires.reset(this.context.currentTime);
     this.releaseLimiter();
   }
 
@@ -256,7 +245,7 @@ export class AudioManager {
     this.stop(true);
     this.engine?.source.stop();
     this.drive?.noise.stop();
-    this.drive?.squeal.stop();
+    this.drive?.tires.dispose();
     void this.context?.close().catch(() => {});
     this.context = undefined;
     this.output = undefined;

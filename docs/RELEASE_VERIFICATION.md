@@ -1,5 +1,21 @@
 # Drift 68 release verification
 
+## Drift 68 1.1.2
+
+The project owner confirmed that the supplied Mountain Drift cover was generated using ChatGPT. The desktop and portrait title images are crops of that source, and the README title image includes an ImageGen extension. OpenAI's terms assign its rights in the output to the user as between OpenAI and the user. The project's MIT grant applies to material within its scope. [OpenAI Terms of Use](https://openai.com/policies/row-terms-of-use/)
+
+Vehicle models and tracks are constructed in source. The game synthesizes engine, tire and cue audio locally. The runtime third-party notices cover Three.js and Vite under MIT and the Outfit font under SIL OFL 1.1.
+
+### Local preflight on 22 November 2026
+
+- A clean staged export installed from the lockfile and passed ESLint, all 71 tests, both TypeScript checks and packaging. Two builds from that export produced identical checksums. The Worker bundle dry run passed, and actionlint accepted both GitHub workflows.
+- The browser suite covered all 12 car and circuit combinations, lap and Zen flow, keyboard controls, records, and WebGL recovery. The extracted browser ZIP ran Solo with external requests blocked and generated tire audio locally. An inherited Vite server override was excluded from the release build.
+- The VSIX installed in VS Code 1.110.0 and upgraded the 1.1.1 package under the same extension ID. A disposable profile passed Solo in both views, keyboard and standard gamepad replay, a scored lap, persistence and focus transfers. Both views passed full 1v1 against an isolated local Worker.
+- One normal editor room on the packaged Cloudflare default passed create, join, movement relay, pause, reconnect, result and room exit. A separate check with an unavailable room server showed the fallback and let the player continue in Solo. The deployed Worker settings returned no explicit observability or log export configuration. Cloudflare's shared quotas and regional latency still apply.
+- npm audit reported zero advisories for the production and full dependency graphs. Redacted Gitleaks scans found no secrets in the release branch, staged source or unpacked archives. The archives passed integrity, identity and license checks and contained no external audio files.
+
+The tested Windows packages and checksums are under `release/1.1.2-preflight/`. The tag workflow builds the canonical release packages. Public name screening found no exact conflicting game title. Formal trademark clearance and real-user multiplayer capacity remain open.
+
 ## Drift 68 1.1.1
 
 The release repository is [aswin-panengal/drift-68](https://github.com/aswin-panengal/drift-68). Use archives and checksums built after the repository rename for release verification.

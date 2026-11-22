@@ -4,7 +4,7 @@
 
 ![Yellow Rearwind 84 drifting through a mountain switchback](docs/screenshots/title.png)
 
-Choose from four cars and three closed circuits. Chase a personal best in Lap Challenge, take an untimed Zen Drive, or invite a friend to an online 1v1. Procedural low-poly scenes, synthesized audio, and local records. Drift 68 has no accounts or telemetry, loads its assets locally, and does not read your source files.
+Choose from four cars and three closed circuits. Chase a personal best in Lap Challenge, take an untimed Zen Drive, or invite a friend to an online 1v1. The game loads its assets locally and keeps settings and Solo records on your device. See [Multiplayer](#multiplayer) for the data exchanged during online play.
 
 ## Install locally
 
@@ -12,7 +12,7 @@ Choose from four cars and three closed circuits. Chase a personal best in Lap Ch
 2. Choose the VSIX from [GitHub Releases](https://github.com/aswin-panengal/drift-68/releases), or build one with `npm run package`.
 3. Open **Explorer → Drift 68**, then select **Play**. If the view is missing, right-click the Explorer section headings and enable it.
 
-You can also run `code --install-extension "path/to/drift-68-1.1.1.vsix"`.
+You can also run `code --install-extension "path/to/drift-68-1.1.2.vsix"`.
 
 For comfortable sidebar play, drag the Drift 68 section's upper divider to give it around 360–600 pixels of height. VS Code controls this size.
 
@@ -54,7 +54,7 @@ The extension connects to the hosted room server automatically when you create o
 2. The other player enters the code and joins. Each player drives the car they selected in Solo setup.
 3. The host selects **Start race**. Both players select **Ready to drive** to start and again after a pause. The first player to finish the selected laps wins.
 
-Rooms hold two players and require no accounts. The room server receives the room code, race settings, player car selection, a temporary reconnect token, and live driving updates. An unexpected disconnect reserves the slot for 30 seconds. Moving between the sidebar and editor leaves the room. Opponent cars can pass through each other, and race results are for casual play with friends. Personal records come from Solo. The service is hosted on Cloudflare. The game clears its room state when a room expires. See the multiplayer documentation for retention and connection details. If the server cannot be reached, return to the mode picker to play Solo.
+Rooms hold two players and require no accounts. The room server receives the room code, race settings, player car selection, a temporary reconnect token, and live driving updates. Cloudflare processes connection metadata such as IP addresses when it hosts the connection. An unexpected disconnect reserves the slot for 30 seconds. Moving between the sidebar and editor leaves the room. Opponent cars can pass through each other, and race results are for casual play with friends. Personal records come from Solo. The game clears its room state when a room expires. See the [multiplayer documentation](docs/MULTIPLAYER.md#connection-data) for retention and connection details. If the server cannot be reached, return to the mode picker to play Solo.
 
 To use a different room server, both players can override `driftBreak.multiplayer.serverUrl` in VS Code User Settings. [Local development and Worker deployment](docs/MULTIPLAYER.md)
 
@@ -84,7 +84,7 @@ Press **F5** with the **Run Drift 68** launch configuration for an isolated Exte
 python -m pip install playwright psutil
 python -m playwright install chromium
 npm run test:extension
-npm run test:workbench -- drift-68-1.1.1.vsix
+npm run test:workbench -- drift-68-1.1.2.vsix
 ```
 
 The workbench suite installs the VSIX into a fresh profile and plays a complete scoring lap with simulated standard gamepad input. It checks keyboard input, view switching, record persistence, and reset confirmation. Reports and screenshots go under `test-results/`. Run `npm run test:browser` with `npm run dev` active for the standalone game suite.

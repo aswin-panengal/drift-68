@@ -23,7 +23,9 @@ export function createCar(config:CarConfig):CarModel {
       p.push(-half*.82,y0,z,-half,y0+.12,z,-half,y1-.12,z,-half*.74,y1,z,half*.74,y1,z,half,y1-.12,z,half,y0+.12,z,half*.82,y0,z);
     }
     for(let r=0;r<rings.length-1;r++)for(let j=0;j<8;j++){const a=r*8+j,b=r*8+(j+1)%8,c=(r+1)*8+j,d=(r+1)*8+(j+1)%8;idx.push(a,c,b,b,c,d);}
-    for(let j=1;j<7;j++){idx.push(0,j+1,j);const base=(rings.length-1)*8;idx.push(base,base+j,base+j+1);}
+    // The rings wind clockwise from +Z, so the two end caps need opposite winding.
+    const front=(rings.length-1)*8;
+    for(let j=1;j<7;j++)idx.push(0,j,j+1,front,front+j+1,front+j);
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setIndex(idx);g.computeVertexNormals();return g;
   };
   const nose=config.id==='rearwind'?.82:config.id==='ironback'?.96:.88;
