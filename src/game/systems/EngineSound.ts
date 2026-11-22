@@ -1,5 +1,5 @@
 import type { CarId, VehicleState } from '../../shared/types';
-import { clamp, damp } from '../vehicle/VehiclePhysics';
+import { damp } from '../vehicle/VehiclePhysics';
 
 interface EngineProfile {
   idle: number;
@@ -23,6 +23,7 @@ const GEARS = [.067, .044, .031, .024, .019, .016] as const;
 export class EngineSound {
   rpm: number;
   load = 0;
+  wheelspin = 0;
   gear = 0;
   shiftTime = 0;
   limiting = false;
@@ -41,8 +42,9 @@ export class EngineSound {
     const speed = Math.abs(vehicle.speed);
     this.load = damp(this.load, .7 * pedal + .3 * vehicle.throttle, 18, dt);
     const sliding = vehicle.handbrake || slip > .28;
-    const wheelspin = this.load * Math.max(slip, vehicle.handbrake ? .8 : 0);
-    const flare = this.load * .075 + wheelspin * .58;
+    const drivenSlip = vehicle.handbrake ? 0 : slip * this.load * (1 - vehicle.brake);
+    this.wheelspin = damp(this.wheelspin, drivenSlip, 12, dt);
+    const throttleFlare = this.load * .075;
     const pedalLift = this.pedal > .55 && pedal < .16;
     this.pedal = pedal;
     this.crack = pedalLift && this.rpm > .59 * redline ? .44 : 0;
@@ -50,8 +52,10 @@ export class EngineSound {
 
     const roadRevs = speed * GEARS[this.gear]!;
     if (this.shiftTime === 0) {
-      if (!sliding && vehicle.speed > 0 && this.load > .4 && this.gear < GEARS.length - 1
-          && roadRevs + flare >= 1 && this.rpm > redline * .963) {
+      // Hold gear through the slide until road speed would call for an upshift by itself.
+      const canUpshift = !sliding || (!vehicle.handbrake && roadRevs + throttleFlare >= 1);
+      if (canUpshift && vehicle.speed > 0 && this.load > .4 && this.gear < GEARS.length - 1
+          && this.revDemand(roadRevs, throttleFlare) >= 1 && this.rpm > redline * .963) {
         this.gear++;
         this.shiftTime = .125;
         this.crack = .71;
@@ -62,10 +66,15 @@ export class EngineSound {
       }
     }
 
-    const demand = Math.max(this.load * .23, speed * GEARS[this.gear]! + flare);
+    const demand = Math.max(this.load * .23, this.revDemand(speed * GEARS[this.gear]!, throttleFlare));
     const target = idle + Math.min(1, demand) * (redline - idle);
     this.rpm = damp(this.rpm, target, this.shiftTime > 0 ? 23 : 11, dt);
     this.limiting = demand >= 1 && this.rpm > redline * .972 && this.load > .52 && this.shiftTime === 0;
+  }
+
+  private revDemand(roadRevs: number, throttleFlare: number): number {
+    // Wheelspin has less room to flare the revs as road speed approaches redline.
+    return roadRevs + throttleFlare + this.wheelspin * .55 * Math.max(0, 1 - roadRevs);
   }
 }
 

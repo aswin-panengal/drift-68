@@ -12,7 +12,7 @@ Choose from four cars and three closed circuits. Chase a personal best in Lap Ch
 2. Choose the VSIX from [GitHub Releases](https://github.com/aswin-panengal/drift-68/releases), or build one with `npm run package`.
 3. Open **Explorer → Drift 68**, then select **Play**. If the view is missing, right-click the Explorer section headings and enable it.
 
-You can also run `code --install-extension "path/to/drift-68-1.1.1.vsix"`.
+You can also run `code --install-extension "path/to/drift-68-1.1.2.vsix"`.
 
 For comfortable sidebar play, drag the Drift 68 section's upper divider to give it around 360–600 pixels of height. VS Code controls this size.
 
@@ -84,7 +84,7 @@ Press **F5** with the **Run Drift 68** launch configuration for an isolated Exte
 python -m pip install playwright psutil
 python -m playwright install chromium
 npm run test:extension
-npm run test:workbench -- drift-68-1.1.1.vsix
+npm run test:workbench -- drift-68-1.1.2.vsix
 ```
 
 The workbench suite installs the VSIX into a fresh profile and plays a complete scoring lap with simulated standard gamepad input. It checks keyboard input, view switching, record persistence, and reset confirmation. Reports and screenshots go under `test-results/`. Run `npm run test:browser` with `npm run dev` active for the standalone game suite.

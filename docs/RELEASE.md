@@ -1,6 +1,6 @@
-# Drift 68 1.1.1 release checklist
+# Drift 68 1.1.2 release checklist
 
-The candidate is **Drift 68 1.1.1**, extension **`aswin-dev.drift-68`**, developer **Aswin Panengal**, planned tag **`v1.1.1`**. This patch refreshes the title and Rearwind 84 model. The existing private repository is `aswin-panengal/drift-68`. GitHub Actions builds the VSIX and offline browser ZIP. The [verification record](RELEASE_VERIFICATION.md#drift-68-111) covers the local patch.
+The candidate is **Drift 68 1.1.2**, extension **`aswin-dev.drift-68`**, developer **Aswin Panengal**, planned tag **`v1.1.2`**. This patch closes the front and rear body panels on all four cars and improves drift revs and tire audio. The GitHub repository is `aswin-panengal/drift-68`. GitHub Actions builds the VSIX and offline browser ZIP.
 
 ## Before making the repository public
 
@@ -34,14 +34,14 @@ Review the private CI result and confirm the exact candidate SHA on GitHub befor
 ## Build and publish the GitHub release
 
 - [ ] Set required CI checks on `main` and protect release tags matching `v*` against updates and deletion. Approve the commit and push first. CI checks pushes and pull requests with the locked dependencies, ESLint, Vitest, TypeScript, Vite, VSCE packaging, and a local Wrangler dry run. CI has read-only repository access.
-- [ ] Once the review and CI are green, approve tagging and pushing `v1.1.1` from the reviewed commit. On the tag, CI checks the version and rebuilds both archives twice, comparing the checksums. Download the `drift-68-release` artifact from the successful tag run and verify that `SOURCE_COMMIT.txt` equals `git rev-parse 'v1.1.1^{commit}'`. Run `sha256sum --check SHA256SUMS.txt` from the downloaded directory, or compare the two hashes using PowerShell `Get-FileHash -Algorithm SHA256`.
+- [ ] Once the review and CI are green, approve tagging and pushing `v1.1.2` from the reviewed commit. On the tag, CI checks the version and rebuilds both archives twice, comparing the checksums. Download the `drift-68-release` artifact from the successful tag run and verify that `SOURCE_COMMIT.txt` equals `git rev-parse 'v1.1.2^{commit}'`. Run `sha256sum --check SHA256SUMS.txt` from the downloaded directory, or compare the two hashes using PowerShell `Get-FileHash -Algorithm SHA256`.
 - [ ] Install that exact VSIX in a disposable profile and run `npm run test:workbench -- <path-to-vsix>`. Check the offline browser archive over localhost and run a normal 1v1 smoke test with the exact package. Verify README screenshots and links using the public tag. Use the [hosted multiplayer checklist](#hosted-multiplayer) when recording results.
 - [ ] After explicit approval, create a draft for the existing tag. Attach the VSIX and the two verification files from the approved CI artifact. Keep the offline browser ZIP for a later release decision. Review the assets and release notes, then approve publishing the GitHub draft. Run the example from the artifact directory with the GitHub CLI authenticated.
 
   ```sh
-  gh release create v1.1.1 --repo aswin-panengal/drift-68 --verify-tag --draft \
-    --title 'Drift 68 1.1.1' --notes 'Refreshed title screen and Rearwind 84 model. Includes offline Solo and online 1v1.' \
-    drift-68-1.1.1.vsix SHA256SUMS.txt SOURCE_COMMIT.txt
+  gh release create v1.1.2 --repo aswin-panengal/drift-68 --verify-tag --draft \
+    --title 'Drift 68 1.1.2' --notes 'Fixed front and rear body panels on all four cars. Improved drift audio with fuller revs between limiter bursts and a powered tire-spin layer.' \
+    drift-68-1.1.2.vsix SHA256SUMS.txt SOURCE_COMMIT.txt
   ```
 
 ### Reproduce the archives
@@ -53,8 +53,8 @@ npm ci
 npm run lint
 npm test
 npm run worker:check
-python scripts/package-release.py release/1.1.1 --tag v1.1.1
-python scripts/package-release.py test-results/rebuild --tag v1.1.1
+python scripts/package-release.py release/1.1.2 --tag v1.1.2
+python scripts/package-release.py test-results/rebuild --tag v1.1.2
 ```
 
 Compare the `SHA256SUMS.txt` files. Windows and Linux checkouts can differ in line endings and toolchain output. Use the tagged Ubuntu CI artifact for publishing.
@@ -73,7 +73,7 @@ Compare the `SHA256SUMS.txt` files. Windows and Linux checkouts can differ in li
   | Workflow | `marketplace.yml` |
   | Environment | `marketplace` |
 
-- [ ] After a stable GitHub release is public and Marketplace publication is explicitly approved, dispatch from `main` with `gh workflow run marketplace.yml --repo aswin-panengal/drift-68 --ref main -f release_tag=v1.1.1`. The verification job rebuilds the tagged source and compares its VSIX bytes, checksum manifest and source commit against the public GitHub release. Review that job before approving the `marketplace` environment in Actions. The publishing job verifies the downloaded VSIX again and sends that file with `vsce publish --oidc --packagePath`. The workflow runs only on manual dispatch.
+- [ ] After a stable GitHub release is public and Marketplace publication is explicitly approved, dispatch from `main` with `gh workflow run marketplace.yml --repo aswin-panengal/drift-68 --ref main -f release_tag=v1.1.2`. The verification job rebuilds the tagged source and compares its VSIX bytes, checksum manifest and source commit against the public GitHub release. Review that job before approving the `marketplace` environment in Actions. The publishing job verifies the downloaded VSIX again and sends that file with `vsce publish --oidc --packagePath`. The workflow runs only on manual dispatch.
 - [ ] Verify the Marketplace listing, publisher, published version, README links, and installation once the approved run succeeds. If withdrawal is necessary, use **Unpublish** in publisher management. [Marketplace unpublishing](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#unpublishing-extensions)
 
 ### Verify the public listing

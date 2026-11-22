@@ -47,6 +47,10 @@ function createDrive(ctx: AudioContext, output: AudioNode) {
   const scrub = filter(ctx, 'bandpass', 850, .76);
   const scrubGain = silentGain(ctx);
   noise.connect(scrub).connect(scrubGain).connect(volume);
+
+  const spin = filter(ctx, 'bandpass', 410, .6);
+  const spinGain = silentGain(ctx);
+  noise.connect(spin).connect(spinGain).connect(volume);
   noise.start();
 
   const squeal = ctx.createOscillator();
@@ -78,14 +82,16 @@ function createDrive(ctx: AudioContext, output: AudioNode) {
     cut[i] = -.79 * clamp(Math.min(t, .032 - t) / .003, 0, 1);
     bark[i] = .66 * (samples[i] ?? 0);
   }
+  const limiterMix = ctx.createGain();
   const limiterChannels = ctx.createChannelSplitter(2);
+  limiterMix.connect(limiterChannels);
   limiterChannels.connect(ignition.gain, 0);
   limiterChannels.connect(volume, 1);
   const limiterPitch = silentGain(ctx);
   limiterChannels.connect(limiterPitch, 0);
   return {
     volume, ignition, exhaust, resonance, engineGain, noise, intake, intakeGain, scrub, scrubGain,
-    squeal, squealGain, crack, limiter, limiterChannels, limiterPitch,
+    spin, spinGain, squeal, squealGain, crack, limiter, limiterMix, limiterPitch,
   };
 }
 
@@ -171,15 +177,19 @@ export class AudioManager {
     const flutter = Math.sin(t * 41) * .7 + Math.sin(t * 93) * .3;
     drive.scrub.frequency.setTargetAtTime(570 + speed * 16 + lateral * 17, t, .045);
     drive.scrubGain.gain.setTargetAtTime(scrub * (.47 + .055 * flutter), t, .036);
+    drive.spin.frequency.setTargetAtTime(320 + speed * 12 + engine.wheelspin * 210, t, .05);
+    drive.spinGain.gain.setTargetAtTime(engine.wheelspin * (.43 + .06 * flutter), t, .042);
     drive.squeal.frequency.setTargetAtTime(900 + speed * 11 + lateral * 27 + flutter * 52, t, .036);
     drive.squealGain.gain.setTargetAtTime(.11 * scrub * scrub * (.8 + .2 * flutter), t, .027);
     drive.volume.gain.setTargetAtTime(settings.volume * (settings.reducedMotion ? .65 : 1), t, .028);
 
+    // Keep the engine audible through each cut as the limiter and tires overlap.
+    drive.limiterMix.gain.setTargetAtTime(1 - .38 * slip, t, .035);
     if (engine.limiting && !this.limiter) {
       const limiter = this.limiter = ctx.createBufferSource();
       limiter.buffer = drive.limiter;
       limiter.loop = true;
-      limiter.connect(drive.limiterChannels);
+      limiter.connect(drive.limiterMix);
       limiter.start();
     } else if (!engine.limiting) {
       this.releaseLimiter();
